@@ -1,0 +1,4 @@
+db/*
+target/
+node_modules/
+queries/
