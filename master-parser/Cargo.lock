@@ -163,20 +163,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ddstats-scripts"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "rusqlite",
- "serde",
- "serde_json",
- "simd-json",
- "tar",
- "ureq",
- "zstd",
-]
-
-[[package]]
 name = "fallible-iterator"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -430,6 +416,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "master-parser"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "simd-json",
+ "tar",
+ "ureq",
+ "zstd",
 ]
 
 [[package]]
