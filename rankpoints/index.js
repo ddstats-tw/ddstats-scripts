@@ -5,8 +5,8 @@ import calc from './calc.js';
 dotenv.config()
 
 /* load in db using better-sqlite3 */
-export const ddnet = new Database('../ddnet.sqlite', { })
-export const points = new Database('../points.db', { })
+export const ddnet = new Database('../db/ddnet.sqlite', { })
+export const points = new Database('../db/points.db', { })
 
 /* WAL mode */
 ddnet.pragma('journal_mode = WAL')

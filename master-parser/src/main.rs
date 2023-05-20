@@ -98,7 +98,7 @@ fn process_day(date: chrono::Date<Utc>, conn: &Connection) -> Result<(), Box<dyn
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Connect to the database
-    let conn = Connection::open("../playtime.db").unwrap();
+    let conn = Connection::open("../db/playtime.db").unwrap();
 
     // Database options
     conn.execute_batch(
