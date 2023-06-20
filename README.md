@@ -2,7 +2,7 @@
 
 
 ## master-parser
-simd-json requries tweaking to the systems Cargo.toml file. Add the following in `~/.cargo/Cargo.toml`
+simd-json requries tweaking to the systems Cargo.toml file. Add the following in `~/.cargo/config.toml`
 
 ```
 [build]
