@@ -6,7 +6,7 @@ unzip ddnet.sqlite.zip
 cd ..
 
 # Create required indexes
-sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrace_map_name_time ON teamrace (map, name, time);"
+sqlite3 db/ddnet.sqlite "CREATE INDEX idx_race_map_name_time ON race (map, name, time);"
 
 # Run scripts that process it
 cd rankpoints
