@@ -25,6 +25,28 @@ cur.execute("""
         Server CHAR(4) NOT NULL DEFAULT ''
     )""")
 
+cur.execute("""
+    CREATE TABLE rankpoints(
+        Rank INTEGER NOT NULL,
+        Points INTEGER NOT NULL,
+        PRIMARY KEY(Rank)
+    )
+""")
+
+cur.execute("""
+    INSERT INTO rankpoints (rank, points) VALUES
+        (1, 25),
+        (2, 18),
+        (3, 15),
+        (4, 12),
+        (5, 10),
+        (6, 8),
+        (7, 6),
+        (8, 4),
+        (9, 2),
+        (10, 1);
+""")
+
 cur.execute("PRAGMA journal_mode = OFF")
 cur.execute("PRAGMA synchronous = 0;")
 cur.execute("PRAGMA cache_size = 100000;")
