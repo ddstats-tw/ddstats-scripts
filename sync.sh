@@ -32,7 +32,8 @@ sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrankings_rank ON teamrankings (ran
 
 # player page
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_rankings_name ON rankings (name)"
-sqlite3 db/ddnet.sqlite "CREATE INDEX idx_rankings_name_map ON teamrankings (name, map)"
+sqlite3 db/ddnet.sqlite "CREATE INDEX idx_rankings_name_map ON rankings (name, map)"
+sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrankings_name_map ON teamrankings (name, map)"
 
 # Map profiles
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_rankings_map_rank ON rankings (map, rank ASC);"
@@ -53,4 +54,4 @@ sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrankings_rank_top5 ON teamrankings
 
 # Rank1s Tabs
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_rankings_name_rank_top10 ON rankings (name, rank) WHERE rank <= 10;"
-sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrankings_name_rank_top10 ON rankings (name, rank) WHERE rank <= 10;"
+sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrankings_name_rank_top10 ON teamrankings (name, rank) WHERE rank <= 10;"
