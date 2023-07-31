@@ -55,3 +55,6 @@ sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrankings_rank_top5 ON teamrankings
 # Rank1s Tabs
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_rankings_name_rank_top10 ON rankings (name, rank) WHERE rank <= 10;"
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrankings_name_rank_top10 ON teamrankings (name, rank) WHERE rank <= 10;"
+
+# worst ranks
+sqlite3 db/ddnet.sqlite "CREATE INDEX idx_race_map_time_desc ON race (map, time DESC)"
