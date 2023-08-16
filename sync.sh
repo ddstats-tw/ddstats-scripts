@@ -60,5 +60,5 @@ sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrankings_name_rank_top10 ON teamra
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_race_map_time_desc ON race (map, time DESC)"
 
 # Searching
-CREATE VIRTUAL TABLE players USING fts4(name TEXT, points INTEGER);
-INSERT INTO players (name, points) SELECT Name, SUM(maps.Points) FROM rankings JOIN maps ON rankings.map = maps.map GROUP BY name;
+sqlite3 db/ddnet.sqlite "CREATE VIRTUAL TABLE players USING fts4(name TEXT, points INTEGER);"
+sqlite3 db/ddnet.sqlite "INSERT INTO players (name, points) SELECT Name, SUM(maps.Points) FROM rankings JOIN maps ON rankings.map = maps.map GROUP BY name;"
