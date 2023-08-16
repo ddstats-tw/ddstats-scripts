@@ -70,5 +70,6 @@ sqlite3 db/ddnet.sqlite "CREATE VIRTUAL TABLE players USING fts4(name TEXT, poin
 sqlite3 db/ddnet.sqlite "INSERT INTO players (name, points) SELECT Name, SUM(maps.Points) FROM rankings JOIN maps ON rankings.map = maps.map GROUP BY name;"
 
 # Start
+cd ../web
 sudo systemctl restart varnish
 pm2 start index.js -i 6 --name ddstats
