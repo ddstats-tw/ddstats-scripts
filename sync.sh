@@ -1,4 +1,5 @@
 pm2 stop ddstats
+pm2 stop ddstats-bot
 
 cd db/
 /usr/bin/rm -rf ddnet.*
@@ -71,5 +72,7 @@ sqlite3 db/ddnet.sqlite "INSERT INTO players (name, points) SELECT Name, SUM(map
 
 # Start
 cd ../web
-sudo systemctl restart varnish
+#sudo systemctl restart varnish
 pm2 start index.js -i 6 --name ddstats
+cd ../ddstats-bot
+pm2 start index.js --name ddstats-bot
