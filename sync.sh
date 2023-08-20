@@ -2,7 +2,7 @@ pm2 stop ddstats
 pm2 stop ddstats-bot
 
 cd db/
-/usr/bin/rm -rf ddnet.*
+rm -rf ddnet.*
 
 wget http://ddnet.org/stats/ddnet.sqlite.zip
 unzip ddnet.sqlite.zip
@@ -24,7 +24,7 @@ python3 points.py
 cd ..
 
 # Add maps to playtime DB
-sqlite3 db/playtime.db "CREATE TABLE maps ( \
+sqlite3 db/playtime.db "CREATE TABLE IF NOT EXISTS maps ( \
   Map varchar(128) PRIMARY KEY NOT NULL \
 ,  Server varchar(32) NOT NULL \
 ,  Points integer NOT NULL DEFAULT 0 \
@@ -32,7 +32,7 @@ sqlite3 db/playtime.db "CREATE TABLE maps ( \
 ,  Mapper varchar(128) NOT NULL \
 ,  Timestamp timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' \
 );"
-sqlite3 db/ddnet.sqlite ".dump maps" | sqlite3 db/playtime.db
+sqlite3 db/ddnet.sqlite ".dump maps" | sqlite3 db/playtime.db 2> /dev/null
 
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_rankings_rank_name ON rankings (rank ASC, name)"
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrankings_rank ON teamrankings (rank ASC)"
@@ -72,7 +72,9 @@ sqlite3 db/ddnet.sqlite "INSERT INTO players (name, points) SELECT Name, SUM(map
 
 # Start
 cd ../web
-#sudo systemctl restart varnish
 pm2 start index.js -i 6 --name ddstats
 cd ../ddstats-bot
 pm2 start index.js --name ddstats-bot
+
+# clear cache
+varnishadm 'ban req.url ~ .'
