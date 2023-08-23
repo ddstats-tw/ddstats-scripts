@@ -33,6 +33,8 @@ cur.execute("""
     )
 """)
 
+cur.execute("DELETE FROM rankpoints")
+
 cur.execute("""
     INSERT INTO rankpoints (rank, points) VALUES
         (1, 25),
