@@ -12,9 +12,9 @@ cd ..
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_race_map_name_time ON race (map, name, time);"
 
 # Run scripts that process it
-#cd rankpoints
-#node index.js # BROKEN CURRENTLY
-#cd ..
+cd rankpoints
+node index.js
+cd ..
 cd master-parser
 ./target/release/master-parser
 cd ..
