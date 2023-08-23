@@ -62,8 +62,6 @@ BigInt.prototype.toJSON = function () { return this.toString() }
 
 console.log("Date, %s", Date.parse(date[0].start))
 for (let d = new Date(Date.parse(date[0].start)); d <= Date.parse(date[0].end); d.setDate(d.getDate() + 1)) {
-    ddnet.exec("DELETE FROM teamrankings")
-    ddnet.exec("DELETE FROM rankings")
     calc.calculatePoints(d.toISOString().split('T')[0], maps)
 }
 

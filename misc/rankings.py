@@ -26,7 +26,7 @@ cur.execute("""
     )""")
 
 cur.execute("""
-    CREATE TABLE rankpoints(
+    CREATE TABLE IF NOT EXISTS rankpoints(
         Rank INTEGER NOT NULL,
         Points INTEGER NOT NULL,
         PRIMARY KEY(Rank)
