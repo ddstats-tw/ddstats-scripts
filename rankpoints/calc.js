@@ -22,27 +22,6 @@ function rankPointsAmount(rank, category) {
     return 0
 }
 
-function insertRankings(rankings, teamrankings, map) {
-    for(const rank of rankings) {
-        if(rank.rank > 10)
-            continue
-
-        ddnet.prepare(`INSERT INTO rankings (rank, timestamp, name, time, map, points, server)
-                            VALUES(?, ?, ?, ?, ?, ?, ?)`).run([
-            rank.rank, rank.timestamp, rank.name, rank.time, rank.map, 
-            rankPointsAmount(rank.rank, map.Server), rank.server])
-    }
-    for(const rank of teamrankings) {
-        if(rank.rank > 10)
-            continue
-
-        ddnet.prepare(`INSERT INTO teamrankings (rank, timestamp, name, time, map, points, server, id)
-                            VALUES(?, ?, ?, ?, ?, ?, ?, ?)`).run([
-            rank.rank, rank.timestamp, rank.name, rank.time, rank.map, 
-            rankPointsAmount(rank.rank, map.Server), rank.Server, rank.id])
-    }
-}
-
 function insertPoints(date, leaderboard) {
     for (const player in leaderboard) {
         points.prepare(`INSERT INTO rankedpoints (date, player, rankpoints, teampoints)
@@ -53,7 +32,6 @@ function insertPoints(date, leaderboard) {
 }
 
 function calculatePoints(date, maps) {
-    // if statement to check if date is already processed
     if(points.prepare(`SELECT * FROM processed WHERE date = ?`).get(date)) {
         console.log(`Skipping: %s (already processed)`, date)
         return 0
@@ -140,9 +118,6 @@ function calculatePoints(date, maps) {
         if (teamrankings[teamrankings.length - 1] != undefined)
             if (teamrankings[teamrankings.length - 1].rank >= 40)
                 timeCacheTeam[map.Map] = teamrankings[teamrankings.length - 1].time
-
-        // Store the top10 for later use
-        insertRankings(rankings, teamrankings, map)
     }
     console.log(`Inserting: %d rows`, Object.keys(rankPoints).length)
     insertPoints(date, rankPoints)
