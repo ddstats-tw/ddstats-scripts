@@ -15,20 +15,14 @@ cur.execute("""
 res = cur.execute("SELECT map FROM maps")
 maps = res.fetchall()
 
-# this takes forever, please kill me
 for map in maps:
     cur.execute("""
-        SELECT p.Map, SUM(p.time) AS 'Playtime', mostaddicted.player, mostaddicted.mplaytime 
-        FROM record_playtime as p
-        JOIN (
-            SELECT map, player, SUM(time) as mplaytime 
-            FROM record_playtime 
-            WHERE map = ? AND player NOT IN ('nameless tee', 'brainless tee', '(connecting)')
-            GROUP BY player 
-            ORDER BY mplaytime DESC 
-        ) as mostaddicted ON mostaddicted.map = p.map
-        WHERE p.map = ? AND p.player NOT IN ('nameless tee', 'brainless tee', '(connecting)')
-        GROUP BY p.Map
+        SELECT p.Map, SUM(p.time) AS 'Playtime', mostaddicted.player, mostaddicted.mplaytime FROM record_playtime as p
+            JOIN (SELECT map, player, SUM(time) as mplaytime FROM record_playtime 
+                WHERE map = ? AND player != 'nameless tee' AND player != 'brainless tee' AND player != '(connecting)'
+                GROUP BY player ORDER BY SUM(time) DESC LIMIT 1
+            ) as mostaddicted ON mostaddicted.map = p.map
+            WHERE p.map = ? AND p.player != 'nameless tee' AND p.player != 'brainless tee' AND p.player != '(connecting)'
         ORDER BY Playtime DESC;
     """, (map[0], map[0]))
 
