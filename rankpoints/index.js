@@ -25,26 +25,6 @@ console.log("Creating indexes")
 ddnet.exec("CREATE INDEX IF NOT EXISTS idx_race_map_time ON race (map, time ASC)")
 ddnet.exec("CREATE INDEX IF NOT EXISTS idx_teamrace_map_time ON teamrace (map, time ASC)")
 
-ddnet.exec(`CREATE TABLE IF NOT EXISTS rankings (
-        Rank INTEGER NOT NULL,
-        Timestamp timestamp NOT NULL, 
-        Name VARCHAR(16) NOT NULL,
-        Time FLOAT NOT NULL,
-        Map VARCHAR(128) NOT NULL,
-        Points INTEGER NOT NULL,
-        Server CHAR(4) NOT NULL DEFAULT ''
-    )`)
-
-ddnet.exec(`CREATE TABLE IF NOT EXISTS teamrankings (
-        Rank INTEGER NOT NULL,
-        Timestamp timestamp NOT NULL, 
-        ID VARBINARY(16) NOT NULL,
-        Name VARCHAR(16) NOT NULL,
-        Time FLOAT NOT NULL,
-        Map VARCHAR(128) NOT NULL,
-        Points INTEGER NOT NULL,
-        Server CHAR(4) NOT NULL DEFAULT ''
-    )`)
 points.exec("CREATE TABLE IF NOT EXISTS rankedpoints (date TEXT, player TEXT, rankpoints INTEGER, teampoints INTEGER)")
 points.exec("CREATE TABLE IF NOT EXISTS processed (date TEXT)")
 
