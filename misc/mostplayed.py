@@ -19,10 +19,10 @@ for map in maps:
     cur.execute("""
         SELECT p.Map, SUM(p.time) AS 'Playtime', mostaddicted.player, mostaddicted.mplaytime FROM record_playtime as p
             JOIN (SELECT map, player, SUM(time) as mplaytime FROM record_playtime 
-                WHERE map = ? AND player != 'nameless tee' AND player != 'brainless tee' AND player != '(connecting)'
+                WHERE map = ? AND player != 'nameless tee' AND player != 'brainless tee' AND player != '(connecting)' AND player != '.'
                 GROUP BY player ORDER BY SUM(time) DESC LIMIT 1
             ) as mostaddicted ON mostaddicted.map = p.map
-            WHERE p.map = ? AND p.player != 'nameless tee' AND p.player != 'brainless tee' AND p.player != '(connecting)'
+            WHERE p.map = ? AND p.player != 'nameless tee' AND p.player != 'brainless tee' AND p.player != '(connecting)' AND p.player != '.'
         ORDER BY Playtime DESC;
     """, (map[0], map[0]))
 
