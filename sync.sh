@@ -21,6 +21,7 @@ cd ..
 cd misc
 python3 rankings.py
 python3 points.py
+python3 mapinfo.py
 cd ..
 
 # Add maps to playtime DB

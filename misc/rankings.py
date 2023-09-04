@@ -49,10 +49,9 @@ cur.execute("""
         (10, 1);
 """)
 
-cur.execute("PRAGMA journal_mode = OFF")
+cur.execute("PRAGMA journal_mode = WAL")
 cur.execute("PRAGMA synchronous = 0;")
 cur.execute("PRAGMA cache_size = 100000;")
-cur.execute("PRAGMA locking_mode = EXCLUSIVE;")
 cur.execute("PRAGMA temp_store = MEMORY;")
 
 print("Processing rankings")
