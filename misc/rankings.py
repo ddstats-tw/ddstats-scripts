@@ -82,5 +82,5 @@ cur.execute("""
                 id
         FROM   teamrace
         GROUP  BY map, id, name
-    ) AS a JOIN race AS race ON a.name = race.name AND a.map = race.map AND a.time = race.time
+    ) AS a JOIN race AS race ON a.name = race.name AND a.map = race.map AND a.time = race.time GROUP  BY a.map, a.id, a.name;
 """)
