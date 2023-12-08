@@ -1,11 +1,11 @@
 use chrono::{Duration, TimeZone, Utc};
-use std::time::{Instant};
+use rusqlite::{params, Connection};
 use serde::Deserialize;
-use std::error::Error;
-use std::{collections::HashMap};
-use tar::Archive;
 use simd_json;
-use rusqlite::{Connection, params};
+use std::collections::HashMap;
+use std::error::Error;
+use std::time::Instant;
+use tar::Archive;
 
 #[derive(Debug, Deserialize, Clone)]
 struct Client {
@@ -40,19 +40,24 @@ struct ServerList {
 }
 
 fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn Error>> {
-    // Check if date is processed (ugly as shit)
+    // Check if date is processed
     let mut stmt = conn.prepare("SELECT date FROM processed WHERE date = ?1")?;
     let mut rows = stmt.query([date.format("%Y-%m-%d").to_string()])?;
 
     while let Some(_row) = rows.next()? {
         println!("Already processed, skipping!");
-        return Ok(())
+        return Ok(());
     }
-    
-    let resp = ureq::get(&format!("https://ddnet.org/stats/master/{}.tar.zstd", date.format("%Y-%m-%d"))).call()?;
+
+    let resp = ureq::get(&format!(
+        "https://ddnet.org/stats/master/{}.tar.zstd",
+        date.format("%Y-%m-%d")
+    ))
+    .call()?;
     let decoder = zstd::stream::Decoder::new(resp.into_reader())?;
 
-    let mut playtime: HashMap<String, HashMap<String, HashMap<String, HashMap<String, i64>>>> = HashMap::new();
+    let mut playtime: HashMap<String, HashMap<String, HashMap<String, HashMap<String, i64>>>> =
+        HashMap::new();
 
     let mut archive = Archive::new(decoder);
 
@@ -66,7 +71,7 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
             Ok(data) => data,
             Err(err) => {
                 println!("{:?}", err);
-                continue
+                continue;
             }
         };
 
@@ -76,26 +81,32 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                     // player , location , gamemode , map , time (i64)
                     let location = match server.location.as_ref() {
                         Some(value) => value,
-                        None => continue
+                        None => continue,
                     };
                     let game_type = match server.info.game_type.as_ref() {
                         Some(value) => value,
-                        None => continue
+                        None => continue,
                     };
                     let map = match server.info.map.as_ref() {
                         Some(value) => value,
-                        None => continue
+                        None => continue,
                     };
                     let name = match client.name.as_ref() {
                         Some(value) => value,
-                        None => continue
+                        None => continue,
                     };
 
                     let player_playtime = playtime.entry(name.clone()).or_insert(HashMap::new());
-                    let region_playtime = player_playtime.entry(location.clone()).or_insert(HashMap::new());
-                    let gamemode_playtime = region_playtime.entry(game_type.clone()).or_insert(HashMap::new());
+                    let region_playtime = player_playtime
+                        .entry(location.clone())
+                        .or_insert(HashMap::new());
+                    let gamemode_playtime = region_playtime
+                        .entry(game_type.clone())
+                        .or_insert(HashMap::new());
 
-                    let map = gamemode_playtime.entry(String::from(map.name.clone())).or_insert(0);
+                    let map = gamemode_playtime
+                        .entry(String::from(map.name.clone()))
+                        .or_insert(0);
                     *map += 5;
                 }
             }
@@ -107,10 +118,20 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
     for (player, player_playtime) in playtime {
         for (location, location_playtime) in player_playtime {
             for (gametype, gametype_playtime) in location_playtime {
-                for(map, map_playtime) in gametype_playtime {
+                for (map, map_playtime) in gametype_playtime {
                     let stmt = "INSERT INTO record_playtime (date, player, location, gametype, map, time) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6);";
-                    conn.execute(stmt, (date.format("%Y-%m-%d").to_string(), 
-                        player.clone(), location.clone(), gametype.clone(), map, map_playtime)).unwrap();
+                    conn.execute(
+                        stmt,
+                        (
+                            date.format("%Y-%m-%d").to_string(),
+                            player.clone(),
+                            location.clone(),
+                            gametype.clone(),
+                            map,
+                            map_playtime,
+                        ),
+                    )
+                    .unwrap();
                     rows += 1;
                 }
             }
@@ -119,8 +140,11 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
     print!("Inserted {} rows!\n", rows);
 
     // Mark the date as processed to avoid duplicates
-    conn.execute("INSERT INTO processed (date) VALUES (?1)",
-    params![date.format("%Y-%m-%d").to_string()]).unwrap();
+    conn.execute(
+        "INSERT INTO processed (date) VALUES (?1)",
+        params![date.format("%Y-%m-%d").to_string()],
+    )
+    .unwrap();
     let duration = start.elapsed();
     println!("Day took {:?}", duration);
     Ok(())
@@ -137,7 +161,8 @@ fn main() -> Result<(), Box<dyn Error>> {
               PRAGMA cache_size = 1000000;
               PRAGMA locking_mode = EXCLUSIVE;
               PRAGMA temp_store = MEMORY;",
-    ).expect("PRAGMA");
+    )
+    .expect("PRAGMA");
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS record_playtime (
@@ -148,15 +173,21 @@ fn main() -> Result<(), Box<dyn Error>> {
                 map CHAR(128) NOT NULL,
                 time INTEGER not null)",
         [],
-    ).unwrap();
-    
+    )
+    .unwrap();
+
     conn.execute(
         "CREATE TABLE IF NOT EXISTS processed (
             date TEXT)",
         [],
-    ).unwrap();
+    )
+    .unwrap();
 
-    let start = Utc.with_ymd_and_hms(2021, 05, 18, 0, 0, 0).single().unwrap().date_naive();
+    let start = Utc
+        .with_ymd_and_hms(2021, 05, 18, 0, 0, 0)
+        .single()
+        .unwrap()
+        .date_naive();
     let end = Utc::now().date_naive() - Duration::days(1);
 
     let total_days = (end - start).num_days() + 1;
@@ -165,6 +196,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("{} [{}/{}]", dt, i + 1, total_days);
         process_day(dt, &conn).unwrap();
     }
-    
+
     Ok(())
 }
