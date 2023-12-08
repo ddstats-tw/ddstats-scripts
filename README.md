@@ -1,4 +1,4 @@
-# ddstats/scripts
+# ddstats-scripts
 
 
 ## master-parser
