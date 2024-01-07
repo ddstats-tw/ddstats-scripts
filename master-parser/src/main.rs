@@ -1,11 +1,9 @@
 use chrono::{Duration, TimeZone, Utc};
-use rusqlite::types::Null;
 use rusqlite::{params, Connection};
 use serde::Deserialize;
 
 use std::collections::HashMap;
 use std::error::Error;
-use std::ptr::null;
 use std::time::Instant;
 use tar::Archive;
 
@@ -53,7 +51,112 @@ struct ServerList {
     pub servers: Vec<Server>,
 }
 
-type SnapshotType = HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<i32, HashMap<String, HashMap<i32, HashMap<i32, HashMap<i32, HashMap<i32, HashMap<i32, i32>>>>>>>>>>>>;
+#[derive(Hash, Eq, PartialEq)]
+struct SnapshotKey {
+    location: String,
+    game_type: String,
+    map: String,
+    name: String,
+    clan: String,
+    country: i32,
+    skin_name: Option<String>,
+    skin_color_body: Option<i32>,
+    skin_color_feet: Option<i32>,
+    afk: Option<bool>,
+    team: Option<i32>,
+}
+
+type SnapshotType = HashMap<SnapshotKey, i32>;
+
+fn process_client(client: &Client, server: &Server, snapshot: &mut SnapshotType) {
+    // required values
+    let location = if let Some(location) = &server.location {
+        location
+    } else {
+        return;
+    };
+
+    let game_type = if let Some(game_type) = &server.info.game_type {
+        game_type
+    } else {
+        return;
+    };
+
+    let map = if let Some(map) = &server.info.map {
+        map
+    } else {
+        return;
+    };
+
+    let name = if let Some(name) = &client.name {
+        name
+    } else {
+        return;
+    };
+
+    let clan = if let Some(clan) = &client.clan {
+        clan
+    } else {
+        return;
+    };
+
+    let country = if let Some(country) = client.country {
+        country
+    } else {
+        return;
+    };
+
+    // optional values
+    let skin_name = client.skin.clone().map_or(None, |s| s.name);
+    let skin_color_body = client.skin.as_ref().map_or(None, |s| s.color_body);
+    let skin_color_feet = client.skin.as_ref().map_or(None, |s| s.color_feet);
+    let afk = client.afk;
+    let team = client.team;
+
+    // Create a key based on the extracted values
+    let key = SnapshotKey {
+        location: location.to_string(),
+        game_type: game_type.to_string(),
+        map: map.name.to_string(),
+        name: name.to_string(),
+        clan: clan.to_string(),
+        country,
+        skin_name,
+        skin_color_body,
+        skin_color_feet,
+        afk,
+        team,
+    };
+
+    // Insert or update the snapshot entry
+    let counter = snapshot.entry(key).or_insert(0);
+    *counter += 5;
+}
+
+fn insert_snapshot(snapshot: &mut SnapshotType, date: chrono::NaiveDate, conn: &Connection) {
+    for (key, time) in snapshot.iter() {
+        // Use iter() to get immutable references
+        let stmt = "INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_color_body, skin_color_feet, afk, team, time) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13);";
+
+        let params = (
+            date.format("%Y-%m-%d").to_string(),
+            key.location.clone(),
+            key.game_type.clone(),
+            key.map.clone(),
+            key.name.clone(),
+            key.clan.clone(),
+            key.country,
+            key.skin_name.clone(),
+            key.skin_color_body,
+            key.skin_color_feet,
+            key.afk,
+            key.team,
+            *time, // Dereference time since it's of type &i32
+        );
+
+        conn.execute(stmt, params).unwrap();
+    }
+}
 
 fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn Error>> {
     let mut stmt = conn.prepare("SELECT date FROM processed WHERE date = ?1")?;
@@ -62,7 +165,7 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
     if let Some(_row) = rows.next()? {
         println!("Already processed, skipping!");
         return Ok(());
-    }    
+    }
 
     let resp = ureq::get(&format!(
         "https://ddnet.org/stats/master/{}.tar.zstd",
@@ -72,7 +175,7 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
     let decoder = zstd::stream::Decoder::new(resp.into_reader())?;
 
     let mut archive = Archive::new(decoder);
-    
+
     let mut snapshot: SnapshotType = HashMap::new();
 
     let time = Instant::now();
@@ -90,184 +193,7 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
         for server in data.servers.iter() {
             for clients in server.info.clients.iter() {
                 for client in clients.iter() {
-                    let location = match server.location.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let game_type = match server.info.game_type.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let map = match server.info.map.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let name = match client.name.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let clan = match client.clan.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let country = match client.country.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let skin = match client.skin.as_ref() {
-                        Some(value) => value,
-                        None => null(),
-                    };
-                    if skin.is_null() { 
-                        let location_snapshot = snapshot
-                            .entry(location.clone())
-                            .or_default();
-                        let game_type_snapshot = location_snapshot
-                            .entry(game_type.clone())
-                            .or_default();
-                        let map_snapshot = game_type_snapshot
-                            .entry(map.name.clone())
-                            .or_default();
-                        let name_snapshot = map_snapshot
-                            .entry(name.clone())
-                            .or_default();
-                        let clan_snapshot = name_snapshot
-                            .entry(clan.clone())
-                            .or_default();
-                        let country_snapshot = clan_snapshot
-                            .entry(*country)
-                            .or_default();
-                        let skin_name_snapshot = country_snapshot
-                            .entry(String::from("RUSTRUSTRUSTRUSTRUSTRUSTRUSTRUSTRUSTRUST"))
-                            .or_default();
-                        let skin_custom_colors_snapshot = skin_name_snapshot
-                            .entry(-69)
-                            .or_default();
-                        let skin_color_body_snapshot = skin_custom_colors_snapshot
-                            .entry(-69)
-                            .or_default();
-                        let skin_color_feet_snapshot = skin_color_body_snapshot
-                            .entry(-69)
-                            .or_default();
-                        let afk_snapshot = skin_color_feet_snapshot
-                            .entry(-69)
-                            .or_default();
-                        let team_snapshot = afk_snapshot
-                            .entry(-69)
-                            .or_insert(0);
-                        *team_snapshot += 5;
-                        continue;
-                    }
-                    let skin = match client.skin.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let skin_name = match skin.name.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let afk = match client.afk.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let team = match client.team.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let skin_color_body = match skin.color_body.as_ref() {
-                        Some(value) => value,
-                        None => null(),
-                    };
-                    let skin_color_feet = match skin.color_feet.as_ref() {
-                        Some(value) => value,
-                        None => null(),
-                    };
-                    let fake_afk = if *afk {1} else {0};
-                    if skin_color_body.is_null() && skin_color_feet.is_null() {
-                        let location_snapshot = snapshot
-                            .entry(location.clone())
-                            .or_default();
-                        let game_type_snapshot = location_snapshot
-                            .entry(game_type.clone())
-                            .or_default();
-                        let map_snapshot = game_type_snapshot
-                            .entry(map.name.clone())
-                            .or_default();
-                        let name_snapshot = map_snapshot
-                            .entry(name.clone())
-                            .or_default();
-                        let clan_snapshot = name_snapshot
-                            .entry(clan.clone())
-                            .or_default();
-                        let country_snapshot = clan_snapshot
-                            .entry(*country)
-                            .or_default();
-                        let skin_name_snapshot = country_snapshot
-                            .entry(skin_name.clone())
-                            .or_default();
-                        let skin_custom_colors_snapshot = skin_name_snapshot
-                            .entry(0)
-                            .or_default();
-                        let skin_color_body_snapshot = skin_custom_colors_snapshot
-                            .entry(-69)
-                            .or_default();
-                        let skin_color_feet_snapshot = skin_color_body_snapshot
-                            .entry(-69)
-                            .or_default();
-                        let afk_snapshot = skin_color_feet_snapshot
-                            .entry(fake_afk)
-                            .or_default();
-                        let team_snapshot = afk_snapshot
-                            .entry(*team)
-                            .or_insert(0);
-                        *team_snapshot += 5;
-                        continue;
-                    }
-                    let skin_color_body = match skin.color_body.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let skin_color_feet = match skin.color_feet.as_ref() {
-                        Some(value) => value,
-                        None => continue,
-                    };
-                    let location_snapshot = snapshot
-                        .entry(location.clone())
-                        .or_default();
-                    let game_type_snapshot = location_snapshot
-                        .entry(game_type.clone())
-                        .or_default();
-                    let map_snapshot = game_type_snapshot
-                        .entry(map.name.clone())
-                        .or_default();
-                    let name_snapshot = map_snapshot
-                        .entry(name.clone())
-                        .or_default();
-                    let clan_snapshot = name_snapshot
-                        .entry(clan.clone())
-                        .or_default();
-                    let country_snapshot = clan_snapshot
-                        .entry(*country)
-                        .or_default();
-                    let skin_name_snapshot = country_snapshot
-                        .entry(skin_name.clone())
-                        .or_default();
-                    let skin_custom_colors_snapshot = skin_name_snapshot
-                        .entry(1)
-                        .or_default();
-                    let skin_color_body_snapshot = skin_custom_colors_snapshot
-                        .entry(*skin_color_body)
-                        .or_default();
-                    let skin_color_feet_snapshot = skin_color_body_snapshot
-                        .entry(*skin_color_feet)
-                        .or_default();
-                    let afk_snapshot = skin_color_feet_snapshot
-                        .entry(fake_afk)
-                        .or_default();
-                    let team_snapshot = afk_snapshot
-                        .entry(*team)
-                        .or_insert(0);
-                    *team_snapshot += 5;
+                    process_client(client, server, &mut snapshot)
                 }
             }
         }
@@ -276,99 +202,9 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
     println!("Parsing took: {:?}", duration);
 
     let time = Instant::now();
-    for (location, location_snapshot) in snapshot {
-        for (gametype, game_type_snapshot) in location_snapshot {
-            for (map, map_snapshot) in game_type_snapshot {
-                for (name, name_snapshot) in map_snapshot {
-                    for (clan, clan_snapshot) in name_snapshot {
-                        for (country, country_snapshot) in clan_snapshot {
-                            for (skin_name, skin_name_snapshot) in country_snapshot {
-                                for (skin_custom_colors, skin_custom_colors_snapshot) in skin_name_snapshot {
-                                    for (skin_color_body, skin_color_body_snapshot) in skin_custom_colors_snapshot {
-                                        for (skin_color_feet, skin_color_feet_snapshot) in skin_color_body_snapshot {
-                                            for (afk, afk_snapshot) in skin_color_feet_snapshot {
-                                                for (team, time) in afk_snapshot {
-                                                    if skin_name == "RUSTRUSTRUSTRUSTRUSTRUSTRUSTRUSTRUSTRUST" {
-                                                        let stmt = "INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_custom_colors, skin_color_body, skin_color_feet, afk, team, time) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14);";
-                                                        conn.execute(
-                                                            stmt,
-                                                            (
-                                                                date.format("%Y-%m-%d").to_string(),
-                                                                location.clone(),
-                                                                gametype.clone(),
-                                                                map.clone(),
-                                                                name.clone(),
-                                                                clan.clone(),
-                                                                country,
-                                                                Null,
-                                                                Null,
-                                                                Null,
-                                                                Null,
-                                                                Null,
-                                                                Null,
-                                                                Null
-                                                            ),
-                                                        )
-                                                        .unwrap();
-                                                        continue;
-                                                    }
-                                                    if skin_custom_colors == 0 {
-                                                        let stmt = "INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_custom_colors, skin_color_body, skin_color_feet, afk, team, time) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14);";
-                                                        conn.execute(
-                                                            stmt,
-                                                            (
-                                                                date.format("%Y-%m-%d").to_string(),
-                                                                location.clone(),
-                                                                gametype.clone(),
-                                                                map.clone(),
-                                                                name.clone(),
-                                                                clan.clone(),
-                                                                country,
-                                                                skin_name.clone(),
-                                                                skin_custom_colors,
-                                                                Null,
-                                                                Null,
-                                                                afk,
-                                                                team,
-                                                                time
-                                                            ),
-                                                        )
-                                                        .unwrap();
-                                                        continue;
-                                                    }
-                                                    let stmt = "INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_custom_colors, skin_color_body, skin_color_feet, afk, team, time) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14);";
-                                                    conn.execute(
-                                                        stmt,
-                                                        (
-                                                            date.format("%Y-%m-%d").to_string(),
-                                                            location.clone(),
-                                                            gametype.clone(),
-                                                            map.clone(),
-                                                            name.clone(),
-                                                            clan.clone(),
-                                                            country,
-                                                            skin_name.clone(),
-                                                            skin_custom_colors,
-                                                            skin_color_body,
-                                                            skin_color_feet,
-                                                            afk,
-                                                            team,
-                                                            time
-                                                        ),
-                                                    )
-                                                    .unwrap();
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+
+    insert_snapshot(&mut snapshot, date, conn);
+
     let duration = time.elapsed();
     println!("Inserting took: {:?}", duration);
 
@@ -402,12 +238,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                     clan CHAR(32) NOT NULL,
                     country INTEGER NOT NULL,
                     skin_name CHAR(32),
-                    skin_custom_colors INTEGER,
                     skin_color_body INTEGER,
                     skin_color_feet INTEGER,
                     afk INTEGER,
                     team INTEGER,
-                    time INTEGER)",
+                    time INTEGER NOT NULL)",
         [],
     )
     .unwrap();
