@@ -54,6 +54,14 @@ struct ServerList {
 }
 
 fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn Error>> {
+    let mut stmt = conn.prepare("SELECT date FROM processed WHERE date = ?1")?;
+    let mut rows = stmt.query([date.format("%Y-%m-%d").to_string()])?;
+
+    while let Some(_row) = rows.next()? {
+        println!("Already processed, skipping!");
+        return Ok(());
+    }
+
     let resp = ureq::get(&format!(
         "https://ddnet.org/stats/master/{}.tar.zstd",
         date.format("%Y-%m-%d")
