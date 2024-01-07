@@ -2,7 +2,7 @@ use chrono::{Duration, TimeZone, Utc};
 use rusqlite::types::Null;
 use rusqlite::{params, Connection};
 use serde::Deserialize;
-use simd_json;
+
 use std::collections::HashMap;
 use std::error::Error;
 use std::ptr::null;
@@ -53,14 +53,16 @@ struct ServerList {
     pub servers: Vec<Server>,
 }
 
+type SnapshotType = HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<i32, HashMap<String, HashMap<i32, HashMap<i32, HashMap<i32, HashMap<i32, HashMap<i32, i32>>>>>>>>>>>>;
+
 fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn Error>> {
     let mut stmt = conn.prepare("SELECT date FROM processed WHERE date = ?1")?;
     let mut rows = stmt.query([date.format("%Y-%m-%d").to_string()])?;
 
-    while let Some(_row) = rows.next()? {
+    if let Some(_row) = rows.next()? {
         println!("Already processed, skipping!");
         return Ok(());
-    }
+    }    
 
     let resp = ureq::get(&format!(
         "https://ddnet.org/stats/master/{}.tar.zstd",
@@ -71,7 +73,7 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
 
     let mut archive = Archive::new(decoder);
     
-    let mut snapshot: HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<i32, HashMap<String, HashMap<i32, HashMap<i32, HashMap<i32, HashMap<i32, HashMap<i32, i32>>>>>>>>>>>> = HashMap::new();
+    let mut snapshot: SnapshotType = HashMap::new();
 
     let time = Instant::now();
     for entry in archive.entries()? {
@@ -119,39 +121,39 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                     if skin.is_null() { 
                         let location_snapshot = snapshot
                             .entry(location.clone())
-                            .or_insert(HashMap::new());
+                            .or_default();
                         let game_type_snapshot = location_snapshot
                             .entry(game_type.clone())
-                            .or_insert(HashMap::new());
+                            .or_default();
                         let map_snapshot = game_type_snapshot
-                            .entry(String::from(map.name.clone()))
-                            .or_insert(HashMap::new());
+                            .entry(map.name.clone())
+                            .or_default();
                         let name_snapshot = map_snapshot
                             .entry(name.clone())
-                            .or_insert(HashMap::new());
+                            .or_default();
                         let clan_snapshot = name_snapshot
                             .entry(clan.clone())
-                            .or_insert(HashMap::new());
+                            .or_default();
                         let country_snapshot = clan_snapshot
-                            .entry(country.clone())
-                            .or_insert(HashMap::new());
+                            .entry(*country)
+                            .or_default();
                         let skin_name_snapshot = country_snapshot
                             .entry(String::from("RUSTRUSTRUSTRUSTRUSTRUSTRUSTRUSTRUSTRUST"))
-                            .or_insert(HashMap::new());
+                            .or_default();
                         let skin_custom_colors_snapshot = skin_name_snapshot
-                            .entry(-69.clone())
-                            .or_insert(HashMap::new());
+                            .entry(-69)
+                            .or_default();
                         let skin_color_body_snapshot = skin_custom_colors_snapshot
-                            .entry(-69.clone())
-                            .or_insert(HashMap::new());
+                            .entry(-69)
+                            .or_default();
                         let skin_color_feet_snapshot = skin_color_body_snapshot
-                            .entry(-69.clone())
-                            .or_insert(HashMap::new());
+                            .entry(-69)
+                            .or_default();
                         let afk_snapshot = skin_color_feet_snapshot
-                            .entry(-69.clone())
-                            .or_insert(HashMap::new());
+                            .entry(-69)
+                            .or_default();
                         let team_snapshot = afk_snapshot
-                            .entry(-69.clone())
+                            .entry(-69)
                             .or_insert(0);
                         *team_snapshot += 5;
                         continue;
@@ -184,39 +186,39 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                     if skin_color_body.is_null() && skin_color_feet.is_null() {
                         let location_snapshot = snapshot
                             .entry(location.clone())
-                            .or_insert(HashMap::new());
+                            .or_default();
                         let game_type_snapshot = location_snapshot
                             .entry(game_type.clone())
-                            .or_insert(HashMap::new());
+                            .or_default();
                         let map_snapshot = game_type_snapshot
-                            .entry(String::from(map.name.clone()))
-                            .or_insert(HashMap::new());
+                            .entry(map.name.clone())
+                            .or_default();
                         let name_snapshot = map_snapshot
                             .entry(name.clone())
-                            .or_insert(HashMap::new());
+                            .or_default();
                         let clan_snapshot = name_snapshot
                             .entry(clan.clone())
-                            .or_insert(HashMap::new());
+                            .or_default();
                         let country_snapshot = clan_snapshot
-                            .entry(country.clone())
-                            .or_insert(HashMap::new());
+                            .entry(*country)
+                            .or_default();
                         let skin_name_snapshot = country_snapshot
-                            .entry(String::from(skin_name.clone()))
-                            .or_insert(HashMap::new());
+                            .entry(skin_name.clone())
+                            .or_default();
                         let skin_custom_colors_snapshot = skin_name_snapshot
                             .entry(0)
-                            .or_insert(HashMap::new());
+                            .or_default();
                         let skin_color_body_snapshot = skin_custom_colors_snapshot
-                            .entry(-69.clone())
-                            .or_insert(HashMap::new());
+                            .entry(-69)
+                            .or_default();
                         let skin_color_feet_snapshot = skin_color_body_snapshot
-                            .entry(-69.clone())
-                            .or_insert(HashMap::new());
+                            .entry(-69)
+                            .or_default();
                         let afk_snapshot = skin_color_feet_snapshot
-                            .entry(fake_afk.clone())
-                            .or_insert(HashMap::new());
+                            .entry(fake_afk)
+                            .or_default();
                         let team_snapshot = afk_snapshot
-                            .entry(team.clone())
+                            .entry(*team)
                             .or_insert(0);
                         *team_snapshot += 5;
                         continue;
@@ -231,39 +233,39 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                     };
                     let location_snapshot = snapshot
                         .entry(location.clone())
-                        .or_insert(HashMap::new());
+                        .or_default();
                     let game_type_snapshot = location_snapshot
                         .entry(game_type.clone())
-                        .or_insert(HashMap::new());
+                        .or_default();
                     let map_snapshot = game_type_snapshot
-                        .entry(String::from(map.name.clone()))
-                        .or_insert(HashMap::new());
+                        .entry(map.name.clone())
+                        .or_default();
                     let name_snapshot = map_snapshot
                         .entry(name.clone())
-                        .or_insert(HashMap::new());
+                        .or_default();
                     let clan_snapshot = name_snapshot
                         .entry(clan.clone())
-                        .or_insert(HashMap::new());
+                        .or_default();
                     let country_snapshot = clan_snapshot
-                        .entry(country.clone())
-                        .or_insert(HashMap::new());
+                        .entry(*country)
+                        .or_default();
                     let skin_name_snapshot = country_snapshot
-                        .entry(String::from(skin_name.clone()))
-                        .or_insert(HashMap::new());
+                        .entry(skin_name.clone())
+                        .or_default();
                     let skin_custom_colors_snapshot = skin_name_snapshot
                         .entry(1)
-                        .or_insert(HashMap::new());
+                        .or_default();
                     let skin_color_body_snapshot = skin_custom_colors_snapshot
-                        .entry(skin_color_body.clone())
-                        .or_insert(HashMap::new());
+                        .entry(*skin_color_body)
+                        .or_default();
                     let skin_color_feet_snapshot = skin_color_body_snapshot
-                        .entry(skin_color_feet.clone())
-                        .or_insert(HashMap::new());
+                        .entry(*skin_color_feet)
+                        .or_default();
                     let afk_snapshot = skin_color_feet_snapshot
-                        .entry(fake_afk.clone())
-                        .or_insert(HashMap::new());
+                        .entry(fake_afk)
+                        .or_default();
                     let team_snapshot = afk_snapshot
-                        .entry(team.clone())
+                        .entry(*team)
                         .or_insert(0);
                     *team_snapshot += 5;
                 }
@@ -297,7 +299,7 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                                                                 map.clone(),
                                                                 name.clone(),
                                                                 clan.clone(),
-                                                                country.clone(),
+                                                                country,
                                                                 Null,
                                                                 Null,
                                                                 Null,
@@ -321,14 +323,14 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                                                                 map.clone(),
                                                                 name.clone(),
                                                                 clan.clone(),
-                                                                country.clone(),
+                                                                country,
                                                                 skin_name.clone(),
-                                                                skin_custom_colors.clone(),
+                                                                skin_custom_colors,
                                                                 Null,
                                                                 Null,
-                                                                afk.clone(),
-                                                                team.clone(),
-                                                                time.clone()
+                                                                afk,
+                                                                team,
+                                                                time
                                                             ),
                                                         )
                                                         .unwrap();
@@ -344,14 +346,14 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                                                             map.clone(),
                                                             name.clone(),
                                                             clan.clone(),
-                                                            country.clone(),
+                                                            country,
                                                             skin_name.clone(),
-                                                            skin_custom_colors.clone(),
-                                                            skin_color_body.clone(),
-                                                            skin_color_feet.clone(),
-                                                            afk.clone(),
-                                                            team.clone(),
-                                                            time.clone()
+                                                            skin_custom_colors,
+                                                            skin_color_body,
+                                                            skin_color_feet,
+                                                            afk,
+                                                            team,
+                                                            time
                                                         ),
                                                     )
                                                     .unwrap();
@@ -418,7 +420,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     .unwrap();
 
     let start = Utc
-        .with_ymd_and_hms(2021, 05, 18, 0, 0, 0)
+        .with_ymd_and_hms(2021, 5, 18, 0, 0, 0)
         .single()
         .unwrap()
         .date_naive();
