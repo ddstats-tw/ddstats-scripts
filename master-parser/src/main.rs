@@ -145,7 +145,7 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                         let team_snapshot = afk_snapshot
                             .entry(-69.clone())
                             .or_insert(0);
-                        *team_snapshot += 1;
+                        *team_snapshot += 5;
                         continue;
                     }
                     let skin = match client.skin.as_ref() {
@@ -210,7 +210,7 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                         let team_snapshot = afk_snapshot
                             .entry(team.clone())
                             .or_insert(0);
-                        *team_snapshot += 1;
+                        *team_snapshot += 5;
                         continue;
                     }
                     let skin_color_body = match skin.color_body.as_ref() {
@@ -257,7 +257,7 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                     let team_snapshot = afk_snapshot
                         .entry(team.clone())
                         .or_insert(0);
-                    *team_snapshot += 1;
+                    *team_snapshot += 5;
                 }
             }
         }
@@ -277,9 +277,9 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                                     for (skin_color_body, skin_color_body_snapshot) in skin_custom_colors_snapshot {
                                         for (skin_color_feet, skin_color_feet_snapshot) in skin_color_body_snapshot {
                                             for (afk, afk_snapshot) in skin_color_feet_snapshot {
-                                                for (team, count) in afk_snapshot {
+                                                for (team, time) in afk_snapshot {
                                                     if skin_name == "RUSTRUSTRUSTRUSTRUSTRUSTRUSTRUSTRUSTRUST" {
-                                                        let stmt = "INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_custom_colors, skin_color_body, skin_color_feet, afk, team, count) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14);";
+                                                        let stmt = "INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_custom_colors, skin_color_body, skin_color_feet, afk, team, time) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14);";
                                                         conn.execute(
                                                             stmt,
                                                             (
@@ -303,7 +303,7 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                                                         continue;
                                                     }
                                                     if skin_custom_colors == 0 {
-                                                        let stmt = "INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_custom_colors, skin_color_body, skin_color_feet, afk, team, count) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14);";
+                                                        let stmt = "INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_custom_colors, skin_color_body, skin_color_feet, afk, team, time) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14);";
                                                         conn.execute(
                                                             stmt,
                                                             (
@@ -320,13 +320,13 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                                                                 Null,
                                                                 afk.clone(),
                                                                 team.clone(),
-                                                                count.clone()
+                                                                time.clone()
                                                             ),
                                                         )
                                                         .unwrap();
                                                         continue;
                                                     }
-                                                    let stmt = "INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_custom_colors, skin_color_body, skin_color_feet, afk, team, count) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14);";
+                                                    let stmt = "INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_custom_colors, skin_color_body, skin_color_feet, afk, team, time) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14);";
                                                     conn.execute(
                                                         stmt,
                                                         (
@@ -343,7 +343,7 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
                                                             skin_color_feet.clone(),
                                                             afk.clone(),
                                                             team.clone(),
-                                                            count.clone()
+                                                            time.clone()
                                                         ),
                                                     )
                                                     .unwrap();
@@ -397,7 +397,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     skin_color_feet INTEGER,
                     afk INTEGER,
                     team INTEGER,
-                    count INTEGER)",
+                    time INTEGER)",
         [],
     )
     .unwrap();
