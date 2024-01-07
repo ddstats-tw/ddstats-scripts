@@ -134,10 +134,8 @@ fn process_client(client: &Client, server: &Server, snapshot: &mut SnapshotType)
 }
 
 fn insert_snapshot(snapshot: &mut SnapshotType, date: chrono::NaiveDate, conn: &Connection) {
+    let mut stmt = conn.prepare("INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_color_body, skin_color_feet, afk, team, time) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13);").unwrap();
     for (key, time) in snapshot.iter() {
-        // Use iter() to get immutable references
-        let stmt = "INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_color_body, skin_color_feet, afk, team, time) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13);";
-
         let params = (
             date.format("%Y-%m-%d").to_string(),
             key.location.clone(),
@@ -154,7 +152,7 @@ fn insert_snapshot(snapshot: &mut SnapshotType, date: chrono::NaiveDate, conn: &
             *time, // Dereference time since it's of type &i32
         );
 
-        conn.execute(stmt, params).unwrap();
+        let _ = stmt.execute(params);
     }
 }
 
