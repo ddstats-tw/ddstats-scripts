@@ -4,10 +4,10 @@ use serde::Deserialize;
 
 use std::collections::HashMap;
 use std::error::Error;
-use std::time::Instant;
-use tar::Archive;
 use std::sync::mpsc::channel;
 use std::thread;
+use std::time::Instant;
+use tar::Archive;
 
 #[derive(Debug, Deserialize, Clone)]
 struct Skin {
@@ -77,40 +77,34 @@ struct DateEntry {
 
 fn process_client(client: &Client, server: &Server, snapshot: &mut SnapshotType) {
     // required values
-    let location = if let Some(location) = &server.location {
-        location
-    } else {
-        return;
+    let location = match server.location.as_ref() {
+        Some(location) => location,
+        None => return,
     };
 
-    let game_type = if let Some(game_type) = &server.info.game_type {
-        game_type
-    } else {
-        return;
+    let game_type = match server.info.game_type.as_ref() {
+        Some(game_type) => game_type,
+        None => return,
     };
 
-    let map = if let Some(map) = &server.info.map {
-        map
-    } else {
-        return;
+    let map = match server.info.map.as_ref() {
+        Some(map) => map,
+        None => return,
     };
 
-    let name = if let Some(name) = &client.name {
-        name
-    } else {
-        return;
+    let name = match client.name.as_ref() {
+        Some(name) => name,
+        None => return,
     };
 
-    let clan = if let Some(clan) = &client.clan {
-        clan
-    } else {
-        return;
+    let clan = match client.clan.as_ref() {
+        Some(clan) => clan,
+        None => return,
     };
 
-    let country = if let Some(country) = client.country {
-        country
-    } else {
-        return;
+    let country = match client.country {
+        Some(country) => country,
+        None => return,
     };
 
     // optional values
@@ -168,10 +162,16 @@ fn insert_snapshot(date_entry: &mut DateEntry, conn: &Connection) {
     conn.execute(
         "INSERT INTO processed (date) VALUES (?1)",
         params![date_entry.date.format("%Y-%m-%d").to_string()],
-    ).unwrap();
+    )
+    .unwrap();
 
     let duration = time.elapsed();
-    println!("{:?} - Inserting {} took: {:?}", thread::current().id(), date_entry.date, duration);
+    println!(
+        "{:?} - Inserting {} took: {:?}",
+        thread::current().id(),
+        date_entry.date,
+        duration
+    );
 }
 
 fn process_day(date_entry: &mut DateEntry) -> Result<(), Box<dyn Error>> {
@@ -205,7 +205,12 @@ fn process_day(date_entry: &mut DateEntry) -> Result<(), Box<dyn Error>> {
         }
     }
     let duration = time.elapsed();
-    println!("{:?} - Parsing {} took: {:?}", thread::current().id(), date_entry.date, duration);
+    println!(
+        "{:?} - Parsing {} took: {:?}",
+        thread::current().id(),
+        date_entry.date,
+        duration
+    );
     Ok(())
 }
 
@@ -256,11 +261,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let end = Utc::now().date_naive() - Duration::days(1);
 
     // Create a vector of all dates to process
-    let mut dates: Vec<chrono::NaiveDate<>> = Vec::new();
+    let mut dates: Vec<chrono::NaiveDate> = Vec::new();
     for dt in start.iter_days().take_while(|&dt| dt <= end) {
         let mut stmt = conn.prepare("SELECT date FROM processed WHERE date = ?")?;
         let date_str = dt.format("%Y-%m-%d").to_string();
-        let mut rows = stmt.query(&[&date_str])?;
+        let mut rows = stmt.query([&date_str])?;
 
         if let Some(_row) = rows.next()? {
             println!("Already processed {}, skipping!", dt);
