@@ -3,6 +3,7 @@ use rusqlite::{params, Connection};
 use serde::Deserialize;
 
 use std::collections::HashMap;
+use std::env;
 use std::error::Error;
 use std::sync::mpsc::channel;
 use std::thread;
@@ -280,11 +281,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
-    const MAX_THREADS: usize = 8;
+    let num_workers: usize = match env::var("NUM_WORKERS") {
+        Ok(num) => num.parse().expect("NUM_WORKERS is not a valid number"),
+        Err(_) => thread::available_parallelism().unwrap().get() - 1,
+    };
 
-    let mut handles: Vec<std::thread::JoinHandle<()>> = Vec::with_capacity(MAX_THREADS);
+    let mut handles: Vec<std::thread::JoinHandle<()>> = Vec::with_capacity(num_workers);
     for dt in dates {
-        if handles.len() >= MAX_THREADS {
+        if handles.len() >= num_workers {
             let handle = handles.remove(0);
             handle.join().expect("Thread failed");
         }
