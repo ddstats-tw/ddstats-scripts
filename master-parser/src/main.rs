@@ -302,6 +302,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // Wait for all threads to complete
+    drop(tx);
     writer_thread.join().unwrap();
     Ok(())
 }
