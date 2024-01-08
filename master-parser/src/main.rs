@@ -6,6 +6,8 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::time::Instant;
 use tar::Archive;
+use std::sync::mpsc::channel;
+use std::thread;
 
 #[derive(Debug, Deserialize, Clone)]
 struct Skin {
@@ -68,6 +70,11 @@ struct SnapshotKey {
 
 type SnapshotType = HashMap<SnapshotKey, i32>;
 
+struct DateEntry {
+    snapshot: SnapshotType,
+    date: chrono::NaiveDate,
+}
+
 fn process_client(client: &Client, server: &Server, snapshot: &mut SnapshotType) {
     // required values
     let location = if let Some(location) = &server.location {
@@ -107,9 +114,9 @@ fn process_client(client: &Client, server: &Server, snapshot: &mut SnapshotType)
     };
 
     // optional values
-    let skin_name = client.skin.clone().map_or(None, |s| s.name);
-    let skin_color_body = client.skin.as_ref().map_or(None, |s| s.color_body);
-    let skin_color_feet = client.skin.as_ref().map_or(None, |s| s.color_feet);
+    let skin_name = client.skin.clone().and_then(|s| s.name);
+    let skin_color_body = client.skin.as_ref().and_then(|s| s.color_body);
+    let skin_color_feet = client.skin.as_ref().and_then(|s| s.color_feet);
     let afk = client.afk;
     let team = client.team;
 
@@ -133,11 +140,13 @@ fn process_client(client: &Client, server: &Server, snapshot: &mut SnapshotType)
     *counter += 5;
 }
 
-fn insert_snapshot(snapshot: &mut SnapshotType, date: chrono::NaiveDate, conn: &Connection) {
+fn insert_snapshot(date_entry: &mut DateEntry, conn: &Connection) {
+    let time = Instant::now();
+
     let mut stmt = conn.prepare("INSERT INTO record_snapshot (date, location, gametype, map, name, clan, country, skin_name, skin_color_body, skin_color_feet, afk, team, time) VALUES (?1 ,?2 ,?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13);").unwrap();
-    for (key, time) in snapshot.iter() {
+    for (key, time) in date_entry.snapshot.iter() {
         let params = (
-            date.format("%Y-%m-%d").to_string(),
+            date_entry.date.format("%Y-%m-%d").to_string(),
             key.location.clone(),
             key.game_type.clone(),
             key.map.clone(),
@@ -149,32 +158,31 @@ fn insert_snapshot(snapshot: &mut SnapshotType, date: chrono::NaiveDate, conn: &
             key.skin_color_feet,
             key.afk,
             key.team,
-            *time, // Dereference time since it's of type &i32
+            *time,
         );
 
         let _ = stmt.execute(params);
     }
+
+    // mark day as processed
+    conn.execute(
+        "INSERT INTO processed (date) VALUES (?1)",
+        params![date_entry.date.format("%Y-%m-%d").to_string()],
+    ).unwrap();
+
+    let duration = time.elapsed();
+    println!("{:?} - Inserting {} took: {:?}", thread::current().id(), date_entry.date, duration);
 }
 
-fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn Error>> {
-    let mut stmt = conn.prepare("SELECT date FROM processed WHERE date = ?1")?;
-    let mut rows = stmt.query([date.format("%Y-%m-%d").to_string()])?;
-
-    if let Some(_row) = rows.next()? {
-        println!("Already processed, skipping!");
-        return Ok(());
-    }
-
+fn process_day(date_entry: &mut DateEntry) -> Result<(), Box<dyn Error>> {
     let resp = ureq::get(&format!(
         "https://ddnet.org/stats/master/{}.tar.zstd",
-        date.format("%Y-%m-%d")
+        date_entry.date.format("%Y-%m-%d")
     ))
     .call()?;
     let decoder = zstd::stream::Decoder::new(resp.into_reader())?;
 
     let mut archive = Archive::new(decoder);
-
-    let mut snapshot: SnapshotType = HashMap::new();
 
     let time = Instant::now();
     for entry in archive.entries()? {
@@ -191,31 +199,19 @@ fn process_day(date: chrono::NaiveDate, conn: &Connection) -> Result<(), Box<dyn
         for server in data.servers.iter() {
             for clients in server.info.clients.iter() {
                 for client in clients.iter() {
-                    process_client(client, server, &mut snapshot)
+                    process_client(client, server, &mut date_entry.snapshot)
                 }
             }
         }
     }
     let duration = time.elapsed();
-    println!("Parsing took: {:?}", duration);
-
-    let time = Instant::now();
-
-    insert_snapshot(&mut snapshot, date, conn);
-
-    let duration = time.elapsed();
-    println!("Inserting took: {:?}", duration);
-
-    conn.execute(
-        "INSERT INTO processed (date) VALUES (?1)",
-        params![date.format("%Y-%m-%d").to_string()],
-    )
-    .unwrap();
+    println!("{:?} - Parsing {} took: {:?}", thread::current().id(), date_entry.date, duration);
     Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let conn = Connection::open("../db/master.db").unwrap();
+    let (tx, rx) = channel::<DateEntry>();
 
     conn.execute_batch(
         "PRAGMA journal_mode = OFF;
@@ -259,12 +255,53 @@ fn main() -> Result<(), Box<dyn Error>> {
         .date_naive();
     let end = Utc::now().date_naive() - Duration::days(1);
 
-    let total_days = (end - start).num_days() + 1;
+    // Create a vector of all dates to process
+    let mut dates: Vec<chrono::NaiveDate<>> = Vec::new();
+    for dt in start.iter_days().take_while(|&dt| dt <= end) {
+        let mut stmt = conn.prepare("SELECT date FROM processed WHERE date = ?")?;
+        let date_str = dt.format("%Y-%m-%d").to_string();
+        let mut rows = stmt.query(&[&date_str])?;
 
-    for (i, dt) in start.iter_days().take_while(|&dt| dt <= end).enumerate() {
-        println!("{} [{}/{}]", dt, i + 1, total_days);
-        process_day(dt, &conn).unwrap();
+        if let Some(_row) = rows.next()? {
+            println!("Already processed {}, skipping!", dt);
+            continue;
+        }
+        dates.push(dt);
     }
 
+    let writer_thread = thread::spawn(move || {
+        for mut date_entry in rx {
+            insert_snapshot(&mut date_entry, &conn);
+        }
+    });
+
+    const MAX_THREADS: usize = 8;
+
+    let mut handles: Vec<std::thread::JoinHandle<()>> = Vec::with_capacity(MAX_THREADS);
+    for dt in dates {
+        if handles.len() >= MAX_THREADS {
+            let handle = handles.remove(0);
+            handle.join().expect("Thread failed");
+        }
+
+        let tx_clone = tx.clone();
+        let handle = thread::spawn(move || {
+            println!("{:?} - Processing {}", thread::current().id(), dt);
+            let mut date_entry = DateEntry {
+                date: dt,
+                snapshot: HashMap::new(),
+            };
+            let _ = process_day(&mut date_entry);
+            tx_clone.send(date_entry).unwrap();
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().expect("Thread failed");
+    }
+
+    // Wait for all threads to complete
+    writer_thread.join().unwrap();
     Ok(())
 }
