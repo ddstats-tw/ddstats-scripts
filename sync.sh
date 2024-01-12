@@ -25,7 +25,7 @@ python3 mapinfo.py
 cd ..
 
 # Add maps to playtime DB
-sqlite3 db/playtime.db "CREATE TABLE IF NOT EXISTS maps ( \
+sqlite3 db/master.db "CREATE TABLE IF NOT EXISTS maps ( \
   Map varchar(128) PRIMARY KEY NOT NULL \
 ,  Server varchar(32) NOT NULL \
 ,  Points integer NOT NULL DEFAULT 0 \
@@ -33,7 +33,7 @@ sqlite3 db/playtime.db "CREATE TABLE IF NOT EXISTS maps ( \
 ,  Mapper varchar(128) NOT NULL \
 ,  Timestamp timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' \
 );"
-sqlite3 db/ddnet.sqlite ".dump maps" | sqlite3 db/playtime.db 2> /dev/null
+sqlite3 db/ddnet.sqlite ".dump maps" | sqlite3 db/master.db 2> /dev/null
 
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_rankings_rank_name ON rankings (rank ASC, name)"
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrankings_rank ON teamrankings (rank ASC)"
@@ -48,7 +48,7 @@ sqlite3 db/ddnet.sqlite "CREATE INDEX idx_rankings_map_rank ON rankings (map, ra
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrankings_map_rank ON teamrankings (map, rank ASC);"
 
 # RUN ANALYZE https://stackoverflow.com/questions/44973667/sqlite-index-seemingly-broken-after-insertion-need-to-run-analyze-which-is-lock
-sqlite3 db/playtime.db "ANALYZE"
+sqlite3 db/master.db "ANALYZE"
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrace_name_time ON teamrace (name, time DESC);"
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_race_name_time ON race (name, time DESC);"
 sqlite3 db/ddnet.sqlite "CREATE INDEX idx_teamrace_id ON teamrace (id);"

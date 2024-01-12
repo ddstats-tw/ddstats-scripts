@@ -1,6 +1,6 @@
 import sqlite3
 
-con = sqlite3.connect('../db/playtime.db', isolation_level=None)
+con = sqlite3.connect('../db/master.db', isolation_level=None)
 
 cur = con.cursor()
 
@@ -17,12 +17,12 @@ maps = res.fetchall()
 
 for map in maps:
     cur.execute("""
-        SELECT p.Map, SUM(p.time) AS 'Playtime', mostaddicted.player, mostaddicted.mplaytime FROM record_playtime as p
-            JOIN (SELECT map, player, SUM(time) as mplaytime FROM record_playtime 
-                WHERE map = ? AND player != 'nameless tee' AND player != 'brainless tee' AND player != '(connecting)' AND player != '.'
-                GROUP BY player ORDER BY SUM(time) DESC LIMIT 1
+        SELECT p.Map, SUM(p.time) AS 'Playtime', mostaddicted.name, mostaddicted.mplaytime FROM record_snapshot as p
+            JOIN (SELECT map, name, SUM(time) as mplaytime FROM record_snapshot 
+                WHERE map = ? AND name != 'nameless tee' AND name != 'brainless tee' AND name != '(connecting)' AND name != '.'
+                GROUP BY name ORDER BY SUM(time) DESC LIMIT 1
             ) as mostaddicted ON mostaddicted.map = p.map
-            WHERE p.map = ? AND p.player != 'nameless tee' AND p.player != 'brainless tee' AND p.player != '(connecting)' AND p.player != '.'
+            WHERE p.map = ? AND p.name != 'nameless tee' AND p.name != 'brainless tee' AND p.name != '(connecting)' AND p.name != '.'
         ORDER BY Playtime DESC;
     """, (map[0], map[0]))
 
