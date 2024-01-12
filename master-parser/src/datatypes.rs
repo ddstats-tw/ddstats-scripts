@@ -59,8 +59,8 @@ impl Client {
 #[derive(Debug, Deserialize)]
 pub struct Info {
     pub map: Map,
-    pub clients: Vec<Client>,
     pub game_type: String,
+    pub clients: Option<Vec<Client>>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -70,12 +70,19 @@ pub struct Map {
 
 #[derive(Debug, Deserialize)]
 pub struct Server {
-    pub location: String,
     pub info: Info,
+    #[serde(default = "default_location")]
+    pub location: String,
 }
 
+fn default_location() -> String {
+    "unknown".to_string()
+}
+
+#[serde_with::serde_as]
 #[derive(Debug, Deserialize)]
 pub struct ServerList {
+    #[serde_as(as = "serde_with::VecSkipError<_>")]
     pub servers: Vec<Server>,
 }
 
