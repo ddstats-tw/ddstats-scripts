@@ -21,10 +21,21 @@ pub struct Client {
 impl Client {
     pub fn process(client: &Client, server: &Server, snapshot: &mut SnapshotStore) {
         // required values
+        let name = client.name.to_string();
+
+        // exclude some common names
+        if name == "nameless tee"
+            || name == "(connecting)"
+            || name == "brainless tee"
+            || name == "(1)"
+            || name == "(1)nameless tee"
+        {
+            return;
+        }
+
         let location = server.location.to_string();
         let game_type = server.info.game_type.to_string();
         let map = server.info.map.clone();
-        let name = client.name.to_string();
         let clan = client.clan.to_string();
         let country = client.country;
 
