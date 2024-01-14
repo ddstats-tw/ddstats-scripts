@@ -16,7 +16,7 @@ cd rankpoints
 node index.js
 cd ..
 cd master-parser
-./target/release/master-parser
+cargo run --release
 cd ..
 cd misc
 python3 rankings.py
