@@ -29,15 +29,21 @@ impl Client {
             || name == "brainless tee"
             || name == "(1)"
             || name == "(1)nameless tee"
+            || name == "."
         {
             return;
         }
 
         let location = server.location.to_string();
         let game_type = server.info.game_type.to_string();
-        let map = server.info.map.clone();
+        let map = server.info.map.name.clone().to_string();
         let clan = client.clan.to_string();
         let country = client.country;
+
+        // length checks
+        if game_type.len() > 32 || map.len() > 128 || clan.len() >= 12 || name.len() >= 16 {
+            return;
+        }
 
         // optional values
         let skin_name = client.skin.clone().and_then(|s| s.name);
@@ -46,11 +52,15 @@ impl Client {
         let afk = client.afk;
         let team = client.team;
 
+        if skin_name.is_some() && skin_name.clone().unwrap().len() >= 24 {
+            return;
+        }
+
         // Create a key based on the extracted values
         let key = SnapshotKey {
             location,
             game_type,
-            map: map.name,
+            map,
             name,
             clan,
             country,

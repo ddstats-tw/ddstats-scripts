@@ -1,53 +1,55 @@
 use chrono::{Duration, TimeZone, Utc};
 use datatypes::DateEntry;
-use rusqlite::Connection;
+use dotenv::dotenv;
+use sqlx::postgres::PgPoolOptions;
 use std::collections::HashMap;
 use std::env;
 use std::error::Error;
+use std::panic;
 use std::sync::mpsc::channel;
 use std::thread;
 
 pub mod database;
 pub mod datatypes;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let conn = Connection::open("../db/master.db").unwrap();
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    dotenv().expect("Failed to load dotenv");
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&db_url)
+        .await?;
     let (tx, rx) = channel::<DateEntry>();
 
-    conn.execute_batch(
-        "PRAGMA journal_mode = OFF;
-              PRAGMA synchronous = 0;
-              PRAGMA cache_size = 1000000;
-              PRAGMA locking_mode = EXCLUSIVE;
-              PRAGMA temp_store = MEMORY;",
+    sqlx::query!(
+        "CREATE TABLE IF NOT EXISTS playtime (
+            date TEXT NOT NULL,
+            location VARCHAR(8) NOT NULL DEFAULT 'unknown',
+            gametype VARCHAR(32) NOT NULL,
+            map VARCHAR(128) NOT NULL,
+            name VARCHAR(15) NOT NULL,
+            clan VARCHAR(15) NOT NULL,
+            country INTEGER NOT NULL,
+            skin_name VARCHAR(32),
+            skin_color_body INTEGER,
+            skin_color_feet INTEGER,
+            afk BOOLEAN,
+            team INTEGER,
+            time INTEGER NOT NULL
+        )",
     )
-    .expect("PRAGMA");
+    .execute(&pool)
+    .await?;
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS record_snapshot (
-                    date TEXT NOT NULL,
-                    location CHAR(32) NOT NULL,
-                    gametype CHAR(32) NOT NULL,
-                    map CHAR(128) NOT NULL,
-                    name CHAR(32) NOT NULL,
-                    clan CHAR(32) NOT NULL,
-                    country INTEGER NOT NULL,
-                    skin_name CHAR(32),
-                    skin_color_body INTEGER,
-                    skin_color_feet INTEGER,
-                    afk INTEGER,
-                    team INTEGER,
-                    time INTEGER NOT NULL)",
-        [],
+    sqlx::query!(
+        "CREATE TABLE IF NOT EXISTS playtime_processed (
+            date TEXT PRIMARY KEY
+        )",
     )
-    .unwrap();
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS processed (
-            date TEXT)",
-        [],
-    )
-    .unwrap();
+    .execute(&pool)
+    .await?;
 
     let start = Utc
         .with_ymd_and_hms(2021, 5, 18, 0, 0, 0)
@@ -59,24 +61,31 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Create a vector of all dates to process
     let mut dates: Vec<chrono::NaiveDate> = Vec::new();
     for dt in start.iter_days().take_while(|&dt| dt <= end) {
-        let mut is_already_processed_stmt =
-            conn.prepare("SELECT date FROM processed WHERE date = ?")?;
-
         let date_string = dt.format("%Y-%m-%d").to_string();
-        let is_processed = is_already_processed_stmt
-            .query_row([&date_string], |_| Ok(()))
-            .is_ok();
+        let processed: Option<(String,)> =
+            sqlx::query_as("SELECT date FROM playtime_processed WHERE date = $1")
+                .bind(date_string)
+                .fetch_optional(&pool)
+                .await?;
 
-        if is_processed {
+        if processed.is_some() {
             println!("Already processed {}, skipping!", dt);
             continue;
         }
         dates.push(dt);
     }
 
-    let writer_thread = thread::spawn(move || {
+    let writer_thread = tokio::spawn(async move {
         for mut date_entry in rx {
-            database::insert_snapshot(&mut date_entry, &conn);
+            match database::insert_snapshot(&mut date_entry, &pool).await {
+                Ok(()) => continue,
+                Err(e) => {
+                    println!(
+                        "An error occured while inserting {}, {:?}",
+                        date_entry.date, e
+                    );
+                }
+            };
         }
     });
 
@@ -94,13 +103,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         let tx_clone = tx.clone();
         let handle = thread::spawn(move || {
-            println!("{:?} - Processing {}", thread::current().id(), dt);
-            let mut date_entry = DateEntry {
-                date: dt,
-                snapshot: HashMap::new(),
-            };
-            let _ = database::process_day(&mut date_entry);
-            tx_clone.send(date_entry).unwrap();
+            let result = panic::catch_unwind(|| {
+                println!("{:?} - Processing {}", thread::current().id(), dt);
+                let mut date_entry = DateEntry {
+                    date: dt,
+                    snapshot: HashMap::new(),
+                };
+                match database::process_day(&mut date_entry) {
+                    Ok(_) => tx_clone.send(date_entry).unwrap(),
+                    _ => {}
+                }
+            });
+            match result {
+                Err(e) => println!("An error occured while processing {} {:?}", dt, e),
+                Ok(_) => {}
+            }
         });
         handles.push(handle);
     }
@@ -111,6 +128,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Wait for all threads to complete
     drop(tx);
-    writer_thread.join().unwrap();
+    writer_thread.await.unwrap();
+
     Ok(())
 }

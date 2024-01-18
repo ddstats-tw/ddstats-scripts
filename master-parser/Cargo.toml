@@ -7,7 +7,9 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.22"
-rusqlite = "0.30.0"
+sqlx = { version = "0.7.3", features = [ "runtime-tokio-rustls", "postgres", "macros" ] }
+dotenv = "0.15.0"
+tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0.147", features = ["derive"] }
 serde_with = "3.4.0"
 serde_json = "1.0.87"
