@@ -72,10 +72,8 @@ sqlite3 db/ddnet.sqlite "CREATE VIRTUAL TABLE players USING fts4(name TEXT, poin
 sqlite3 db/ddnet.sqlite "INSERT INTO players (name, points) SELECT Name, SUM(maps.Points) FROM rankings JOIN maps ON rankings.map = maps.map GROUP BY name;"
 
 # Start
-cd ../web
-pm2 start index.js -i 6 --name ddstats
-cd ../ddstats-bot
-pm2 start index.js --name ddstats-bot
+pm2 restart ddstats
+pm2 restart ddstats-bot
 
 # clear cache
 varnishadm 'ban req.url ~ .'
