@@ -11,7 +11,8 @@ cur.execute("""
         Name VARCHAR(16) NOT NULL,
         Time FLOAT NOT NULL,
         Map VARCHAR(128) NOT NULL,
-        Server CHAR(4) NOT NULL DEFAULT ''
+        Server CHAR(4) NOT NULL DEFAULT '',
+        BetterThan INTEGER NOT NULL
     )""")
 
 cur.execute("""
@@ -57,15 +58,16 @@ cur.execute("PRAGMA temp_store = MEMORY;")
 print("Processing rankings")
 
 cur.execute("""
-    INSERT INTO rankings (rank, time, name, timestamp, map, server)
+    INSERT INTO rankings (rank, time, name, timestamp, map, server, betterthan)
     SELECT RANK() OVER (PARTITION BY map ORDER BY min(time)) AS rank,
         MIN(time) as 'time',
         name,
         timestamp,
         map,
-        server
+        server,
+        CAST(ROUND((PERCENT_RANK() OVER (PARTITION BY map ORDER BY MIN(Time) DESC) * 100) + 0.5, 0) - 1 AS INT)
     FROM race
-    GROUP BY map, name
+    GROUP BY map, name;
 """)
 
 print("Processing teamrankings")
