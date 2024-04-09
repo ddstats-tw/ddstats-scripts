@@ -97,7 +97,7 @@ function calculatePoints(date, maps) {
             if (rankPoints[rank.name] === undefined)
                 rankPoints[rank.name] = { name: rank.name, teampoints: 0, rankpoints: 0 }
 
-            rankPoints[rank.name].rankpoints += rankPointsAmount(rank.rank)
+            rankPoints[rank.name].rankpoints += rankPointsAmount(rank.rank, map.Server)
         }
 
         if (rankings[rankings.length - 1] != undefined)
@@ -112,7 +112,7 @@ function calculatePoints(date, maps) {
             if (rankPoints[rank.name] === undefined)
                 rankPoints[rank.name] = { name: rank.name, teampoints: 0, rankpoints: 0 }
 
-            rankPoints[rank.name].teampoints += rankPointsAmount(rank.rank)
+            rankPoints[rank.name].teampoints += rankPointsAmount(rank.rank, map.Server)
         }
 
         if (teamrankings[teamrankings.length - 1] != undefined)

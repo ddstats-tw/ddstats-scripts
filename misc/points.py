@@ -56,7 +56,7 @@ def main():
             rankpoints = """
                 SELECT maps.Server, rankings.Name, SUM(rankpoints.points), RANK() OVER (PARTITION BY maps.Server ORDER BY SUM(rankpoints.points) DESC) FROM rankings
                     JOIN maps ON maps.Map = rankings.Map JOIN rankpoints ON rankings.rank = rankpoints.rank
-                    WHERE rankings.rank <= 10
+                    WHERE rankings.rank <= 10 and maps.Server != 'Fun'
                 GROUP BY rankings.Name, maps.Server;
             """
             results2 = execute_query(cur, rankpoints)
@@ -69,6 +69,7 @@ def main():
                     GROUP BY Name, Map
                 ) as r
                     JOIN maps ON maps.Map = r.Map JOIN rankpoints ON r.rank = rankpoints.rank
+                WHERE maps.Server != 'Fun'
                 GROUP BY r.name, maps.Server
             """
             results3 = execute_query(cur, teampoints)
