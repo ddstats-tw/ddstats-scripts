@@ -35,8 +35,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             skin_name VARCHAR(32),
             skin_color_body INTEGER,
             skin_color_feet INTEGER,
-            afk BOOLEAN,
-            team INTEGER,
             time INTEGER NOT NULL
         )",
     )

@@ -19,8 +19,6 @@ pub async fn insert_snapshot(
     let mut skin_name = Vec::new();
     let mut skin_color_body = Vec::new();
     let mut skin_color_feet = Vec::new();
-    let mut afk = Vec::new();
-    let mut team = Vec::new();
     let mut times = Vec::new();
 
     for (key, time) in date_entry.snapshot.iter() {
@@ -34,13 +32,11 @@ pub async fn insert_snapshot(
         skin_name.push(key.skin_name.clone());
         skin_color_body.push(key.skin_color_body);
         skin_color_feet.push(key.skin_color_feet);
-        afk.push(key.afk);
-        team.push(key.team);
         times.push(*time);
     }
 
     let insert_query = r"
-    INSERT INTO playtime (date, location, gametype, map, name, clan, country, skin_name, skin_color_body, skin_color_feet, afk, team, time)
+    INSERT INTO playtime (date, location, gametype, map, name, clan, country, skin_name, skin_color_body, skin_color_feet, time)
     SELECT * FROM UNNEST(
         $1::TEXT[],
         $2::VARCHAR(8)[],
@@ -52,9 +48,7 @@ pub async fn insert_snapshot(
         $8::VARCHAR(32)[],
         $9::INTEGER[],
         $10::INTEGER[],
-        $11::BOOLEAN[],
-        $12::INTEGER[],
-        $13::INTEGER[]
+        $11::INTEGER[]
     )";
 
     sqlx::query(insert_query)
@@ -68,8 +62,6 @@ pub async fn insert_snapshot(
         .bind(skin_name)
         .bind(skin_color_body)
         .bind(skin_color_feet)
-        .bind(afk)
-        .bind(team)
         .bind(times)
         .execute(conn)
         .await?;

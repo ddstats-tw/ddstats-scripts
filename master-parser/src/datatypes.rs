@@ -14,8 +14,6 @@ pub struct Client {
     pub clan: String,
     pub country: i32,
     pub skin: Option<Skin>,
-    pub afk: Option<bool>,
-    pub team: Option<i32>,
 }
 
 impl Client {
@@ -49,8 +47,6 @@ impl Client {
         let skin_name = client.skin.clone().and_then(|s| s.name);
         let skin_color_body = client.skin.as_ref().and_then(|s| s.color_body);
         let skin_color_feet = client.skin.as_ref().and_then(|s| s.color_feet);
-        let afk = client.afk;
-        let team = client.team;
 
         if skin_name.is_some() && skin_name.clone().unwrap().len() >= 24 {
             return;
@@ -67,8 +63,6 @@ impl Client {
             skin_name,
             skin_color_body,
             skin_color_feet,
-            afk,
-            team,
         };
 
         // Insert or update the snapshot entry
@@ -118,8 +112,6 @@ pub struct SnapshotKey {
     pub skin_name: Option<String>,
     pub skin_color_body: Option<i32>,
     pub skin_color_feet: Option<i32>,
-    pub afk: Option<bool>,
-    pub team: Option<i32>,
 }
 
 pub type SnapshotStore = HashMap<SnapshotKey, i32>;
