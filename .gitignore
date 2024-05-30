@@ -1,6 +1,5 @@
-db/*db*
-db/*sqlite*
-target/
 node_modules/
-queries/
 .env
+data/*
+!data/.gitkeep
+/target

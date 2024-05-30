@@ -1,7 +1,10 @@
-use crate::datatypes::{Client, DateEntry, ServerList};
 use sqlx::{Executor, Pool, Postgres};
 use std::{error::Error, thread, time::Instant};
 use tar::Archive;
+
+use crate::master_parser::datatypes::{Client, ServerList};
+
+use super::datatypes::DateEntry;
 
 pub async fn insert_snapshot(
     date_entry: &mut DateEntry,
@@ -22,7 +25,7 @@ pub async fn insert_snapshot(
     let mut times = Vec::new();
 
     for (key, time) in date_entry.snapshot.iter() {
-        date.push(date_entry.date.format("%Y-%m-%d").to_string());
+        date.push(date_entry.date);
         location.push(key.location.clone());
         game_type.push(key.game_type.clone());
         map.push(key.map.clone());
@@ -38,7 +41,7 @@ pub async fn insert_snapshot(
     let insert_query = r"
     INSERT INTO playtime (date, location, gametype, map, name, clan, country, skin_name, skin_color_body, skin_color_feet, time)
     SELECT * FROM UNNEST(
-        $1::TEXT[],
+        $1::DATE[],
         $2::VARCHAR(8)[],
         $3::VARCHAR(32)[],
         $4::VARCHAR(128)[],
@@ -74,7 +77,7 @@ pub async fn insert_snapshot(
     .await?;
 
     let duration = time.elapsed();
-    println!(
+    tracing::info!(
         "{:?} - Inserting {} took: {:?}",
         thread::current().id(),
         date_entry.date,
@@ -100,7 +103,7 @@ pub fn process_day(date_entry: &mut DateEntry) -> Result<(), Box<dyn Error>> {
         let data: ServerList = match simd_json::from_reader(entry) {
             Ok(data) => data,
             Err(err) => {
-                println!("{:?}", err);
+                tracing::error!("{:?}", err);
                 continue;
             }
         };
@@ -114,7 +117,7 @@ pub fn process_day(date_entry: &mut DateEntry) -> Result<(), Box<dyn Error>> {
         }
     }
     let duration = time.elapsed();
-    println!(
+    tracing::info!(
         "{:?} - Parsing {} took: {:?}",
         thread::current().id(),
         date_entry.date,
