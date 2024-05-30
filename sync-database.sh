@@ -1,9 +1,8 @@
+wget http://ddnet.org/players.msgpack -O ../web/players.msgpack
 cd data
 rm -rf ddnet*
-wget ddnet.org/stats/ddnet.sqlite.zip
+wget https://ddnet.org/stats/ddnet.sqlite.zip
 unzip ddnet.sqlite.zip
-
-PGPASSWORD=ddstats psql -U ddstats -h 127.0.0.1 < ../prepare-psql.sql
 
 # sqlite to csv
 sqlite3 -header -csv ddnet.sqlite ".output maps.csv" "SELECT map, server, points, stars, mapper, IIF(timestamp = '0000-00-00 00:00:00', '', timestamp) AS timestamp FROM maps ORDER BY map"
