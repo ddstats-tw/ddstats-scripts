@@ -35,6 +35,8 @@ enum Actions {
     Players,
     #[clap(name = "ranked-points")]
     RankedPoints,
+    #[clap(name = "playtime-maps")]
+    PlaytimeMaps,
 }
 
 #[tokio::main]
@@ -57,11 +59,12 @@ async fn main() {
             let sync = Instant::now();
             database_sync::main(db.borrow()).await;
             master_parser::main(db.clone()).await.ok();
-            misc::rankings::main(db.borrow()).await.ok();
-            historical_rankedpoints::main(db.borrow()).await;
-            misc::players::main(db.borrow()).await.ok();
-            misc::map_stats::main(db.borrow()).await.ok();
             misc::most_played::main(db.borrow()).await.ok();
+            //misc::playtime_maps::main(db.borrow()).await.ok();
+            historical_rankedpoints::main(db.borrow()).await;
+            misc::map_stats::main(db.borrow()).await.ok();
+            misc::rankings::main(db.borrow()).await.ok();
+            misc::players::main(db.borrow()).await.ok();
             tracing::info!("Database sync took {:?} to complete", sync.elapsed());
         }
         Actions::MasterParser => {
@@ -84,6 +87,9 @@ async fn main() {
         }
         Actions::RankedPoints => {
             historical_rankedpoints::main(db.borrow()).await;
+        }
+        Actions::PlaytimeMaps => {
+            misc::playtime_maps::main(db.borrow()).await.ok();
         }
     }
 

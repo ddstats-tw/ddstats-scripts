@@ -124,6 +124,17 @@ CREATE TABLE IF NOT EXISTS maps_playtime (
     mostaddicted_seconds INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS playtime_maps (
+    name VARCHAR(16) NOT NULL,
+    map VARCHAR(128) NOT NULL,
+    seconds_played INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (map, name)
+);
+
+CREATE TABLE IF NOT EXISTS playtime_maps_processed (
+    date DATE PRIMARY KEY
+);
+
 CREATE TABLE IF NOT EXISTS rankings (
     rank INTEGER NOT NULL,
     timestamp timestamp NOT NULL, 

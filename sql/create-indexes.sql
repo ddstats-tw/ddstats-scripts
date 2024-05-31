@@ -22,6 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_teamrankings_rank_top5 ON teamrankings (rank) WHE
 -- playtime
 CREATE INDEX IF NOT EXISTS idx_playtime_name ON playtime (name);
 CREATE INDEX IF NOT EXISTS idx_playtime_map ON playtime (map);
+CREATE INDEX IF NOT EXISTS idx_playtime_date ON playtime (date);
 
 -- playtime_maps
 CREATE INDEX IF NOT EXISTS idx_playtime_maps_name ON playtime_maps (name);
