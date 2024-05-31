@@ -22,7 +22,7 @@ pub async fn main(db: Arc<Pool<Postgres>>) -> Result<(), Box<dyn Error>> {
     // Create a vector of all dates to process
     let mut dates: Vec<chrono::NaiveDate> = Vec::new();
     for dt in start.iter_days().take_while(|&dt| dt <= end) {
-        let processed: Option<(String,)> =
+        let processed: Option<(NaiveDate,)> =
             sqlx::query_as("SELECT date FROM playtime_processed WHERE date = $1")
                 .bind(dt)
                 .fetch_optional(db.borrow())
