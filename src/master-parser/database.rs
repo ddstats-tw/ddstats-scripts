@@ -72,7 +72,7 @@ pub async fn insert_snapshot(
     // mark day as processed
     conn.execute(
         sqlx::query("INSERT INTO playtime_processed (date) VALUES ($1)")
-            .bind(date_entry.date.format("%Y-%m-%d").to_string()),
+            .bind(date_entry.date),
     )
     .await?;
 
