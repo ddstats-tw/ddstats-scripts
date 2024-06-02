@@ -9,7 +9,7 @@ SELECT map,
 FROM
     playtime
 WHERE
-    date NOT IN (SELECT date FROM playtime_maps_processed)
+    date > (SELECT MAX(date) FROM playtime_maps_processed)
 GROUP BY
     map,
     name

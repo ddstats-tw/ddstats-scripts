@@ -60,7 +60,7 @@ async fn main() {
             database_sync::main(db.borrow()).await;
             master_parser::main(db.clone()).await.ok();
             misc::most_played::main(db.borrow()).await.ok();
-            //misc::playtime_maps::main(db.borrow()).await.ok();
+            misc::playtime_maps::main(db.borrow()).await.ok();
             historical_rankedpoints::main(db.borrow()).await;
             misc::map_stats::main(db.borrow()).await.ok();
             misc::rankings::main(db.borrow()).await.ok();
