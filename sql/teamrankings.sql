@@ -28,12 +28,14 @@ FROM
     GROUP BY
         map,
         id,
+        timestamp,
         name
 ) AS a
 JOIN race AS race
     ON a.name = race.name AND 
         a.map = race.map AND 
-        a.time = race.time
+        a.time = race.time AND
+        a.timestamp = race.timestamp
 GROUP BY a.map,
     a.id,
     a.rank,
