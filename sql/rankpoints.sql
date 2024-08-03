@@ -14,7 +14,7 @@ SELECT name, SUM(rankpoints.points) AS "points?", MIN(time) AS "time!" FROM (
         ORDER BY
             name,
             time
-    ) ORDER BY time)
+    ) AS ranks ORDER BY time)
     WHERE rank <= 20
 ) AS rankings LEFT JOIN 
     rankpoints ON rankpoints.rank = rankings.rank

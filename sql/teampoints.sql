@@ -15,7 +15,7 @@ FROM (
         GROUP BY
             id,
             name
-    ) GROUP BY name) AS teamrankings
+    ) AS ranks GROUP BY name) AS teamrankings
 LEFT JOIN
     rankpoints ON rankpoints.rank = teamrankings.rank
 GROUP BY
