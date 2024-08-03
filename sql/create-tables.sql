@@ -193,3 +193,14 @@ INSERT INTO rankpoints (rank, points) VALUES
     (9, 2),
     (10, 1)
 ON CONFLICT DO NOTHING;
+
+CREATE TABLE players (
+	name VARCHAR(15) NOT NULL,
+	points INTEGER NOT NULL,
+	clan VARCHAR(15),
+	country INTEGER,
+	skin_name VARCHAR(32),
+	skin_color_body INTEGER,
+	skin_color_feet INTEGER,
+	PRIMAY KEY(name)
+);
