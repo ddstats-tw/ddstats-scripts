@@ -20,4 +20,4 @@ SELECT RANK() OVER (PARTITION BY map ORDER BY time) AS rank, * FROM (
         map,
         name,
         time
-) ORDER BY time
+) AS ranks ORDER BY time
