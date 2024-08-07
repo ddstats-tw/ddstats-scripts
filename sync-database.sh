@@ -19,11 +19,26 @@ read_env() {
 
 read_env
 
-wget http://ddnet.org/players.msgpack -O $DDSTATS_WEB_PATH/players.msgpack
+wget http://ddnet.org/players.msgpack -O $DDSTATS_WEB_PATH/players-tmp.msgpack
+if [[ $? -ne 0 ]]; then
+    echo "Failed to download players.msgpack"
+    exit 1;
+fi
+mv $DDSTATS_WEB_PATH/players-tmp.msgpack $DDSTATS_WEB_PATH/players.msgpack
+
 cd data
 rm -rf ddnet*
 wget https://ddnet.org/stats/ddnet.sqlite.zip
+if [[ $? -ne 0 ]]; then
+    echo "Failed to download ddnet.sqlite.zip"
+    exit 1;
+fi
+
 unzip ddnet.sqlite.zip
+if [[ $? -ne 0 ]]; then
+    echo "Failed to unzip ddnet.sqlite.zip"
+    exit 1;
+fi
 
 # sqlite to csv
 sqlite3 -header -csv ddnet.sqlite ".output maps.csv" "SELECT map, server, points, stars, mapper, IIF(timestamp = '0000-00-00 00:00:00', '', timestamp) AS timestamp FROM maps ORDER BY map"
