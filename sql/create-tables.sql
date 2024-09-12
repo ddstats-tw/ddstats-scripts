@@ -202,5 +202,5 @@ CREATE TABLE players (
 	skin_name VARCHAR(32),
 	skin_color_body INTEGER,
 	skin_color_feet INTEGER,
-	PRIMAY KEY(name)
+	PRIMARY KEY(name)
 );
