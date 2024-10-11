@@ -22,12 +22,12 @@ impl Client {
         let name = client.name.to_string();
 
         // exclude some common names
-        if name == "nameless tee"
-            || name == "(connecting)"
-            || name == "brainless tee"
+        if name == "(connecting)"
             || name == "(1)"
-            || name == "(1)nameless tee"
             || name == "."
+            || name == "brainless tee"
+            || name.ends_with("nameless tee")
+            || name.ends_with("brainless te")
         {
             return;
         }
