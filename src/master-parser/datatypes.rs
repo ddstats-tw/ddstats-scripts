@@ -27,6 +27,7 @@ impl Client {
             || name == "."
             || name == "brainless tee"
             || name.ends_with("nameless tee")
+            || name.ends_with(")nameless te")
             || name.ends_with("brainless te")
         {
             return;
