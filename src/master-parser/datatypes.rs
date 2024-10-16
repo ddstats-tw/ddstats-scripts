@@ -46,8 +46,14 @@ impl Client {
 
         // optional values
         let skin_name = client.skin.clone().and_then(|s| s.name);
-        let skin_color_body = client.skin.as_ref().and_then(|s| s.color_body);
-        let skin_color_feet = client.skin.as_ref().and_then(|s| s.color_feet);
+        let skin_color_body = client
+            .skin
+            .as_ref()
+            .and_then(|s| s.color_body.clamp(Some(0), Some(0xffffff)));
+        let skin_color_feet = client
+            .skin
+            .as_ref()
+            .and_then(|s| s.color_feet.clamp(Some(0), Some(0xffffff)));
 
         if skin_name.is_some() && skin_name.clone().unwrap().len() >= 24 {
             return;
