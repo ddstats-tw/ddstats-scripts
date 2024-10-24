@@ -49,11 +49,11 @@ impl Client {
         let skin_color_body = client
             .skin
             .as_ref()
-            .and_then(|s| s.color_body.clamp(Some(0), Some(0xffffff)));
+            .and_then(|s| s.color_body.map(|color| color.clamp(0, 0xffffff)));
         let skin_color_feet = client
             .skin
             .as_ref()
-            .and_then(|s| s.color_feet.clamp(Some(0), Some(0xffffff)));
+            .and_then(|s| s.color_feet.map(|color| color.clamp(0, 0xffffff)));
 
         if skin_name.is_some() && skin_name.clone().unwrap().len() >= 24 {
             return;
