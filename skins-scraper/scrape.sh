@@ -25,5 +25,6 @@ find . ../ -maxdepth 1 -regex ".*\.png" -type f -printf "%f\n" | sort | uniq -u 
 cd ..
 
 # Create a zip of all skins
-find . -maxdepth 1 -regex ".*\.png" | zip -q -@ skins.zip
-find original/ -maxdepth 1 -regex ".*\.png" | zip -q -@ original/skins-original.zip
+mkdir zips/
+find . -maxdepth 1 -regex ".*\.png" | zip -q -@ zips/skins.zip
+find original/ -maxdepth 1 -regex ".*\.png" | zip -q -@ zips/skins-original.zip
