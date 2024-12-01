@@ -12,9 +12,9 @@ mkdir output/original
 # Prefer skins in this order, because of duplicates
 cp -n data/ddnet/*.png output/original/
 cp -n data/teedata/*.png output/original/
+cp -n data/other/*.png output/original/
 cp -n data/teeworld/*.png output/original/
 cp -n data/teeworldsdb/06/*.png output/original/
-cp -n data/other/*.png output/original/
 
 # Remove any skins that don't have a alpha channel
 cd ./output/original
