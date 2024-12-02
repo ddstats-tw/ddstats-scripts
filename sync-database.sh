@@ -27,7 +27,7 @@ fi
 mv $DDSTATS_WEB_PATH/players-tmp.msgpack $DDSTATS_WEB_PATH/players.msgpack
 
 cd data
-rm -rf ddnet*
+rm -rf ddnet.sqlite*
 wget https://ddnet.org/stats/ddnet.sqlite.zip
 if [[ $? -ne 0 ]]; then
     echo "Failed to download ddnet.sqlite.zip"
