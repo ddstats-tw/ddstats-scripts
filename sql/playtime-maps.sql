@@ -9,7 +9,7 @@ SELECT map,
 FROM
     playtime
 WHERE
-    date > (SELECT MAX(date) FROM playtime_maps_processed)
+    date > (SELECT COALESCE(MAX(date), '2021-05-17') FROM playtime_maps_processed)
 GROUP BY
     map,
     name
