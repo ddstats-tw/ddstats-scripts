@@ -18,6 +18,10 @@ mod misc;
 struct Cli {
     #[command(subcommand)]
     action: Actions,
+
+    /// Add this option if it's your first database sync
+    #[arg(long, default_value_t = false)]
+    do_clean_insert: bool,
 }
 
 #[derive(Subcommand)]
@@ -58,7 +62,7 @@ async fn main() {
         Actions::Sync => {
             tracing::info!("Starting complete sync of database");
             let sync = Instant::now();
-            database_sync::main(db.borrow()).await;
+            database_sync::main(db.borrow(), cli.do_clean_insert).await;
             master_parser::main(db.clone()).await.ok();
             misc::most_played::main(db.borrow()).await.ok();
             misc::playtime_maps::main(db.borrow()).await.ok();
@@ -84,7 +88,7 @@ async fn main() {
             misc::players::main(db.borrow()).await.ok();
         }
         Actions::SyncDatabase => {
-            database_sync::main(db.borrow()).await;
+            database_sync::main(db.borrow(), cli.do_clean_insert).await;
         }
         Actions::RankedPoints => {
             historical_rankedpoints::main(db.borrow()).await;

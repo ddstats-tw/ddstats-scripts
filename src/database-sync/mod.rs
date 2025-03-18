@@ -351,6 +351,13 @@ async fn process_diff_records(diff_records_type: &DiffRecordsType, db: &Pool<Pos
                 process_diff_delete_record(delete, diff_records_type.csv_type.clone(), db).await;
             }
         }
+        if add_records.len() == BATCH_AMOUNT {
+            tracing::info!("Attempting insert");
+            // TODO: would be nice to avoid the clone here.
+            process_diff_add_record(add_records.clone(), diff_records_type.csv_type.clone(), db)
+                .await;
+            add_records.clear();
+        }
     }
     tracing::info!("Attempting insert");
     process_diff_add_record(add_records, diff_records_type.csv_type.clone(), db).await;
@@ -363,26 +370,7 @@ fn load_csv_file_to_reader(filename: String) -> Result<Reader<BufReader<File>>, 
     Ok(reader_builder.from_reader(buf_reader))
 }
 
-fn load_csv_file_to_reader_check_empty(
-    filename: String,
-) -> Result<Option<Reader<BufReader<File>>>, Box<dyn Error>> {
-    let reader_builder = ReaderBuilder::new();
-    let file = File::open(&filename)?;
-    let buf_reader = BufReader::new(file);
-    let reader = reader_builder.from_reader(buf_reader);
-
-    match reader.into_records().count() {
-        0 => Ok(None),
-        _ => {
-            let file = File::open(&filename)?;
-            let buf_reader = BufReader::new(file);
-            let reader = reader_builder.from_reader(buf_reader);
-            Ok(Some(reader))
-        }
-    }
-}
-
-pub async fn main(db: &Pool<Postgres>) {
+pub async fn main(db: &Pool<Postgres>, do_clean_insert: bool) {
     // Maps
     let maps_diff_records = create_diff(
         "maps.csv".to_string(),
@@ -402,25 +390,30 @@ pub async fn main(db: &Pool<Postgres>) {
     process_diff_records(&mapinfo_diff_records, db).await;
 
     // Teamrace
-    let teamrace_diff_records = create_diff(
-        "teamrace.csv".to_string(),
-        "teamrace-psql.csv".to_string(),
-        Type::Teamrace,
-        vec![1, 4],
-    );
-    process_diff_records(&teamrace_diff_records, db).await;
+    if do_clean_insert {
+        clean_insert("teamrace.csv".to_string(), Type::Teamrace, db).await;
+    } else {
+        let teamrace_diff_records = create_diff(
+            "teamrace.csv".to_string(),
+            "teamrace-psql.csv".to_string(),
+            Type::Teamrace,
+            vec![1, 4],
+        );
+        process_diff_records(&teamrace_diff_records, db).await;
+    }
 
-    // // Race
-    let race_diff_records = create_diff(
-        "race.csv".to_string(),
-        "race-psql.csv".to_string(),
-        Type::Race,
-        vec![0, 1, 2, 3, 4],
-    );
-    process_diff_records(&race_diff_records, db).await;
-
-    //clean_insert("race.csv".to_string(), Type::Race, &database).await;
-    //clean_insert("teamrace.csv".to_string(), Type::Teamrace, &database).await;
+    // Race
+    if do_clean_insert {
+        clean_insert("race.csv".to_string(), Type::Race, db).await;
+    } else {
+        let race_diff_records = create_diff(
+            "race.csv".to_string(),
+            "race-psql.csv".to_string(),
+            Type::Race,
+            vec![0, 1, 2, 3, 4],
+        );
+        process_diff_records(&race_diff_records, db).await;
+    }
 }
 
 async fn clean_insert(source: String, csv_type: Type, db: &Pool<Postgres>) {

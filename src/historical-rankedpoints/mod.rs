@@ -52,8 +52,8 @@ async fn process_date(
         }
 
         let map_cached_time = time_cache.entry(map.map.clone()).or_insert(TimeCache {
-            time: 10.0 * 100000.0,
-            time_team: 10.0 * 100000.0,
+            time: f64::MAX,
+            time_team: f64::MAX,
         });
 
         let rankpoints = sqlx::query_file_as!(
@@ -150,7 +150,6 @@ async fn process_date(
 }
 
 pub async fn main(db: &Pool<Postgres>) {
-    // JUST USE FROM YMD????
     let start = NaiveDate::from_ymd_opt(2013, 7, 18).unwrap();
 
     let end = Utc::now().date_naive() - Duration::days(1);
