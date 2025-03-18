@@ -19,7 +19,7 @@ read_env() {
 
 read_env
 
-wget http://ddnet.org/players.msgpack -O $DDSTATS_WEB_PATH/players-tmp.msgpack
+wget https://ddnet.org/players.msgpack -O $DDSTATS_WEB_PATH/players-tmp.msgpack
 if [[ $? -ne 0 ]]; then
     echo "Failed to download players.msgpack"
     exit 1;
