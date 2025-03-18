@@ -1,3 +1,6 @@
+-- extensions needed (postgresql-contrib)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- race
 CREATE INDEX IF NOT EXISTS idx_race_name ON race (name);
 CREATE INDEX IF NOT EXISTS idx_race_time_desc ON race (time DESC);

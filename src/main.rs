@@ -49,9 +49,10 @@ async fn main() {
     let db = Arc::new(init_db().await);
 
     tracing::info!("Creating tables");
-    let _ = sqlx::raw_sql(include_str!("../sql/create-tables.sql"))
+    sqlx::raw_sql(include_str!("../sql/create-tables.sql"))
         .execute(db.borrow())
-        .await;
+        .await
+        .unwrap();
 
     match &cli.action {
         Actions::Sync => {
@@ -94,7 +95,8 @@ async fn main() {
     }
 
     tracing::info!("Creating indexes");
-    let _ = sqlx::raw_sql(include_str!("../sql/create-indexes.sql"))
+    sqlx::raw_sql(include_str!("../sql/create-indexes.sql"))
         .execute(db.borrow())
-        .await;
+        .await
+        .unwrap();
 }
