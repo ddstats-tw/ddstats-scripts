@@ -194,7 +194,7 @@ INSERT INTO rankpoints (rank, points) VALUES
     (10, 1)
 ON CONFLICT DO NOTHING;
 
-CREATE TABLE players (
+CREATE TABLE IF NOT EXISTS players (
 	name VARCHAR(15) NOT NULL,
 	points INTEGER NOT NULL,
 	clan VARCHAR(15),
