@@ -6,3 +6,5 @@ curl https://ddnet.org/releases/maps.json | jq -r '.[]|[.name, .thumbnail] | @ts
         wget -O "$name".png "$thumbnail"
     fi
 done
+
+\cp -rf ../thumbnails/ /var/www/
