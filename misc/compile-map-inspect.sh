@@ -7,4 +7,5 @@ cp -r mapres_06 /var/www/map-inspect/
 cd ../data/twgpu/map-inspect-web
 cargo install wasm-pack
 wasm-pack build --target web
+cp index.html /var/www/map-inspect/
 cp -r pkg /var/www/map-inspect/
