@@ -8,7 +8,7 @@ SELECT map, '63 turtles', SUM(time) AS "seconds_played" FROM playtime
     WHERE name IN ('63 turtles', 'pisisik') GROUP BY map;
 
 /* 2024-06-03, RENAME GAMETYPE 'F-DDrace idm' -> 'F-DDrace'  */
-UPDATE playtime SET gametype = 'F-DDrace' WHERE gametype = 'F-DDrace idm'
+UPDATE playtime SET gametype = 'F-DDrace' WHERE gametype = 'F-DDrace idm';
 
 /* 2024-11-25, RENAME 'JETFiRE...' -> 'exosphere' */
 UPDATE rankedpoints SET name = 'exosphere' WHERE name = 'JETFiRE...';
