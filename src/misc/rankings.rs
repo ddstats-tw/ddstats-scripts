@@ -16,7 +16,7 @@ pub async fn main(db: &Pool<Postgres>) -> Result<(), Box<dyn Error>> {
         .execute(db)
         .await?;
     tracing::info!(
-        "Finished generating rankings in {:?}",
+        "Finished generating teamrankings in {:?}",
         teamrankings.elapsed()
     );
 
