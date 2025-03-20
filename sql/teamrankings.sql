@@ -1,5 +1,9 @@
+BEGIN;
+DROP TABLE IF EXISTS teamrankings_tmp;
+CREATE TABLE IF NOT EXISTS teamrankings_tmp (LIKE teamrankings INCLUDING ALL);
+
 INSERT INTO 
-    teamrankings (
+    teamrankings_tmp (
         rank,
         time,
         players,
@@ -47,4 +51,14 @@ GROUP BY a.map,
     a.rank,
     a.time,
     a.timestamp,
-    server
+    server;
+
+TRUNCATE teamrankings;
+DROP TABLE teamrankings;
+ALTER TABLE teamrankings_tmp RENAME TO teamrankings;
+
+ALTER INDEX IF EXISTS teamrankings_tmp_map_idx RENAME TO idx_teamrankings_map;
+ALTER INDEX IF EXISTS teamrankings_tmp_players_idx RENAME TO idx_teamrankings_players;
+ALTER INDEX IF EXISTS teamrankings_tmp_rank_idx RENAME TO idx_teamrankings_rank_top5;
+
+COMMIT;

@@ -9,15 +9,15 @@ CREATE INDEX IF NOT EXISTS idx_race_map_timestamp_time ON race (map, time ASC, t
 -- teamrace
 CREATE INDEX IF NOT EXISTS idx_teamrace_map_timestamp_time ON teamrace (map, timestamp, time ASC);
 
--- players
+-- players (add new ones to players.sql as well)
 CREATE INDEX IF NOT EXISTS trgm_idx_name ON players USING gin (name gin_trgm_ops);
 
--- rankings
+-- rankings (add new ones to rankings.sql as well)
 CREATE INDEX IF NOT EXISTS idx_rankings_map ON rankings (map);
 CREATE INDEX IF NOT EXISTS idx_rankings_name ON rankings (name);
 CREATE INDEX IF NOT EXISTS idx_rankings_rank_top5 ON rankings (rank) WHERE rank <= 5;
 
--- teamrankings
+-- teamrankings (add new ones to teamrankings.sql as well)
 CREATE INDEX IF NOT EXISTS idx_teamrankings_map ON teamrankings (map);
 CREATE INDEX IF NOT EXISTS idx_teamrankings_players on teamrankings USING GIN (players);
 CREATE INDEX IF NOT EXISTS idx_teamrankings_rank_top5 ON teamrankings (rank) WHERE rank <= 5;
