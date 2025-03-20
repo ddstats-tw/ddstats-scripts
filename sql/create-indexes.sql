@@ -30,3 +30,6 @@ CREATE INDEX IF NOT EXISTS idx_playtime_date ON playtime (date);
 -- playtime_maps
 CREATE INDEX IF NOT EXISTS idx_playtime_maps_name ON playtime_maps (name);
 CREATE INDEX IF NOT EXISTS idx_playtime_maps_map_seconds_played ON playtime_maps (map, seconds_played DESC);
+
+-- rankedpoints
+CREATE INDEX IF NOT EXISTS idx_rankedpoints_name ON rankedpoints (name);
