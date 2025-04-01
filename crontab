@@ -1,5 +1,5 @@
 PATH=$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-0 5 * * * cd ~/ddstats-scripts/misc && ./maps-thumbnails.sh
+*/30 * * * * cd ~/ddstats-scripts/misc && ./map-thumbnails.sh
 */30 * * * * cd ~/ddstats-scripts && ./sync.sh
 0 7 * * * cd ~/ddstats-scripts/misc && ./fetch-maps.sh
 0 */2 * * * cd ~/ddstats-scripts/skins-scraper/ && ./scrape.sh && rm -rf /var/www/skins/ && cp -R output/ /var/www/skins/
