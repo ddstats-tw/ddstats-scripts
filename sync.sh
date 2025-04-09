@@ -15,6 +15,11 @@ fi
 echo "$LAST_MODIFIED" > data/last-modified.txt
 
 ./sync-database.sh
+if [[ $? -ne 0 ]]; then
+    echo "Failed to get required data for sync"
+    exit 1;
+fi
+
 cargo run --release --bin ddstats-cli -- sync
 
 # restart ddstats-web

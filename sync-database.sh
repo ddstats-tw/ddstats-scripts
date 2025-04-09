@@ -17,6 +17,13 @@ read_env() {
   done < "$filePath"
 }
 
+check_err_sqlite() {
+  if [[ $? -ne 0 ]]; then
+    echo "Something is wrong with ddnet.sqlite. Aborting..."
+    exit 1;
+  fi
+}
+
 read_env
 
 wget https://ddnet.org/players.msgpack -O $DDSTATS_WEB_PATH/players-tmp.msgpack
@@ -42,8 +49,11 @@ fi
 
 # sqlite to csv
 sqlite3 -header -csv ddnet.sqlite ".output maps.csv" "SELECT map, server, points, stars, mapper, IIF(timestamp = '0000-00-00 00:00:00', '', timestamp) AS timestamp FROM maps ORDER BY map"
+check_err_sqlite
 sqlite3 -header -csv ddnet.sqlite ".output mapinfo.csv" "SELECT * FROM mapinfo ORDER BY map" 
+check_err_sqlite
 sqlite3 -header -csv ddnet.sqlite ".output teamrace.csv" "SELECT map, name, printf('%.2f', time) as time, timestamp, hex(id) as hex FROM teamrace ORDER BY map, name, time, timestamp, id"
+check_err_sqlite
 sqlite3 -header -csv ddnet.sqlite ".output race.csv" " \
     SELECT map, name, printf('%.2f', time) as time, timestamp, server, \
     printf('%.2f', cp1), printf('%.2f', cp2), printf('%.2f', cp3), \
@@ -55,6 +65,8 @@ sqlite3 -header -csv ddnet.sqlite ".output race.csv" " \
     printf('%.2f', cp19), printf('%.2f', cp20), printf('%.2f', cp21), \
     printf('%.2f', cp22), printf('%.2f', cp23), printf('%.2f', cp24), \
     printf('%.2f', cp25) FROM race ORDER BY map, name, time, timestamp, server"
+check_err_sqlite
+
 
 # postgres to csv
 psql $DATABASE_URL -c "\COPY (SELECT * FROM maps ORDER BY map COLLATE \"C\") TO 'maps-psql.csv' CSV HEADER"
