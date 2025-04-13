@@ -24,6 +24,9 @@ identify -format '%A - %f\n' *.png 2>/dev/null | grep 'Undefined' | cut -c 13- |
 find . ../ -maxdepth 1 -regex ".*\.png" -type f -printf "%f\n" | sort | uniq -u | tr '\n' '\0' | xargs -n 2 -P 6 -0 -I {} magick "{}" -resize 512x256\> -colorspace sRGB PNG00:"../{}"
 cd ..
 
+# Remove non-matching width and height
+identify -format '%[fx:w/h]-%f\n' *.png | grep -v "2-" | cut -d "-" -f2- | tr '\n' '\0' | xargs -0 rm
+
 # Create a zip of all skins
 mkdir zips/
 find . -maxdepth 1 -regex ".*\.png" | zip -q -@ zips/skins.zip
