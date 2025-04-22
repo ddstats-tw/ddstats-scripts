@@ -21,7 +21,7 @@ cd ./output/original
 identify -format '%A - %f\n' *.png 2>/dev/null | grep 'Undefined' | cut -c 13- | tr '\n' '\0' | xargs -0 rm
 
 # Remove non-matching width and height
-identify -format '%[fx:w/h]-%f\n' *.png | grep -v "^2" | cut -d "-" -f2- | tr '\n' '\0' | xargs -0 rm
+identify -format '%[fx:w/h]-%f\n' *.png | grep -v "^2-" | cut -d "-" -f2- | tr '\n' '\0' | xargs -0 rm
 
 # Remove any skins longer than 24 charcters
 find -regextype posix-egrep -type f -regex '.*[^/]{28}' -delete
